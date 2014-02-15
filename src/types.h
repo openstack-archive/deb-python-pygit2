@@ -98,11 +98,14 @@ typedef struct {
 } NoteIter;
 
 /* git_patch */
+SIMPLE_TYPE(Patch, git_patch, patch)
+
 typedef struct {
     PyObject_HEAD
-    git_patch *patch;
-    PyObject* hunks;
-} Patch;
+    Patch *patch;
+    size_t i;
+    size_t n;
+} PatchIter;
 
 /* git_diff */
 SIMPLE_TYPE(Diff, git_diff, diff)
@@ -113,6 +116,13 @@ typedef struct {
     size_t i;
     size_t n;
 } DiffIter;
+
+typedef struct {
+    PyObject_HEAD
+    Diff *diff;
+    size_t i;
+    size_t n;
+} DiffPatchIter;
 
 typedef struct {
     PyObject_HEAD
@@ -135,13 +145,22 @@ typedef struct {
 
 typedef struct {
     PyObject_HEAD
-    PyObject* lines;
+    Patch *patch;
+    git_diff_hunk *hunk;
+    size_t index;
     int old_start;
     int old_lines;
     int new_start;
     int new_lines;
     PyObject *header;
 } DiffHunk;
+
+typedef struct {
+    PyObject_HEAD
+    DiffHunk *hunk;
+    size_t i;
+    size_t n;
+} DiffHunkIter;
 
 typedef struct {
     PyObject_HEAD
