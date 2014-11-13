@@ -1,0 +1,17 @@
+Description: 2nd privacy breach
+Author: Thomas Goirand <zigo@debian.org>
+Forwarded: no
+Last-Update: 2014-11-14
+
+--- python-pygit2-0.21.4.orig/docs/development.rst
++++ python-pygit2-0.21.4/docs/development.rst
+@@ -2,9 +2,6 @@
+ The development version
+ **********************************************************************
+ 
+-.. image:: https://secure.travis-ci.org/libgit2/pygit2.png
+-   :target: http://travis-ci.org/libgit2/pygit2
+-
+ .. code-block:: sh
+ 
+     $ git clone git://github.com/libgit2/pygit2.git
