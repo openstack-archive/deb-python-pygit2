@@ -1,0 +1,18 @@
+Description: Removes privacy breanch
+ Removes ajax script from cdnjs.cloudflare.com.
+Author: Thomas Goirand <zigo@debian.org>
+Forwarded: no
+Last-Update: 2014-11-13
+
+--- python-pygit2-0.21.4.orig/docs/_themes/sphinx_rtd_theme/layout.html
++++ python-pygit2-0.21.4/docs/_themes/sphinx_rtd_theme/layout.html
+@@ -70,9 +70,6 @@
+   {%- endblock %}
+   {%- block extrahead %} {% endblock %}
+ 
+-  {# Keep modernizr in head - http://modernizr.com/docs/#installing #}
+-  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+-
+ </head>
+ 
+ <body class="wy-body-for-nav" role="document">
