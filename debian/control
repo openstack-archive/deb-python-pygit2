@@ -5,8 +5,10 @@ Maintainer: PKG OpenStack <openstack-devel@lists.alioth.debian.org>
 Uploaders: Thomas Goirand <zigo@debian.org>
 Build-Depends: debhelper (>= 9),
                dh-python,
+               libgit2-dev,
                python-all (>= 2.6.6-3~),
                python-setuptools,
+               python-sphinx,
                python3-all,
                python3-setuptools
 Standards-Version: 3.9.6
