@@ -6,10 +6,10 @@ Uploaders: Thomas Goirand <zigo@debian.org>
 Build-Depends: debhelper (>= 9),
                dh-python,
                libgit2-dev,
-               python-all (>= 2.6.6-3~),
+               python-all-dev (>= 2.6.6-3~),
                python-setuptools,
                python-sphinx,
-               python3-all,
+               python3-all-dev (>= 3.2),
                python3-setuptools
 Standards-Version: 3.9.6
 Vcs-Browser: http://anonscm.debian.org/gitweb/?p=openstack/python-pygit2.git
