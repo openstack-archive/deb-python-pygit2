@@ -3,7 +3,7 @@ python-pygit2 (0.21.4-2) UNRELEASED; urgency=medium
   * debian/watch
     - add trailing slash to fix downloads
   * debian/control
-    - add python{,3}-pycparser to build-depends
+    - add python{,3}-{cffi,pycparser} to build-depends
   * debian/rules
     - export http{,s}_proxy to prevent any online activity during build
 
