@@ -6,6 +6,8 @@ PYTHON3S:=$(shell py3versions -vr)
 UPSTREAM_GIT = git://github.com/libgit2/pygit2.git
 -include /usr/share/openstack-pkg-tools/pkgos.make
 
+export  http_proxy=http://127.0.0.1:9/
+export  https_proxy=http://127.0.0.1:9/
 # export LDFLAGS="-Wl,-rpath='$LIBGIT2/lib',--enable-new-dtags $LDFLAGS"
 
 %:
