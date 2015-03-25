@@ -17,3 +17,7 @@ before_install:
 
 script:
   - python setup.py test
+
+branches:
+  except:
+    - pr346
