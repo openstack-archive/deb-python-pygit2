@@ -1,6 +1,7 @@
 python-pygit2 (0.21.4-3) unstable; urgency=medium
 
   * Ran wrap-and-sort.
+  * Removed version in Build-Depends on python{3,}-all-dev.
 
  -- Thomas Goirand <zigo@debian.org>  Tue, 26 May 2015 10:39:26 +0200
 
