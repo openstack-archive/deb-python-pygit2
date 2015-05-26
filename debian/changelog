@@ -1,3 +1,9 @@
+python-pygit2 (0.21.4-3) unstable; urgency=medium
+
+  * Ran wrap-and-sort.
+
+ -- Thomas Goirand <zigo@debian.org>  Tue, 26 May 2015 10:39:26 +0200
+
 python-pygit2 (0.21.4-2) unstable; urgency=medium
 
   [ Yaroslav Halchenko ]
