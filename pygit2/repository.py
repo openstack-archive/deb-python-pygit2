@@ -48,7 +48,7 @@ from .config import Config
 from .errors import check_error
 from .ffi import ffi, C
 from .index import Index
-from .remote import Remote
+from .remote import RemoteCollection
 from .blame import Blame
 from .utils import to_bytes, is_string
 
@@ -57,6 +57,19 @@ class Repository(_Repository):
 
     def __init__(self, *args, **kwargs):
         super(Repository, self).__init__(*args, **kwargs)
+        self._common_init()
+
+    @classmethod
+    def _from_c(cls, ptr, owned):
+        cptr = ffi.new('git_repository **')
+        cptr[0] = ptr
+        repo = cls.__new__(cls)
+        super(cls, repo)._from_c(bytes(ffi.buffer(cptr)[:]), owned)
+        repo._common_init()
+        return repo
+
+    def _common_init(self):
+        self.remotes = RemoteCollection(self)
 
         # Get the pointer as the contents of a buffer and store it for
         # later access
@@ -90,36 +103,11 @@ class Repository(_Repository):
         """create_remote(name, url) -> Remote
 
         Creates a new remote.
+
+        This method is deprecated, please use Remote.remotes.create()
         """
 
-        cremote = ffi.new('git_remote **')
-
-        err = C.git_remote_create(cremote, self._repo, to_bytes(name),
-                                  to_bytes(url))
-        check_error(err)
-
-        return Remote(self, cremote[0])
-
-    @property
-    def remotes(self):
-        """Returns all configured remotes"""
-
-        names = ffi.new('git_strarray *')
-
-        try:
-            err = C.git_remote_list(names, self._repo)
-            check_error(err)
-
-            l = [None] * names.count
-            cremote = ffi.new('git_remote **')
-            for i in range(names.count):
-                err = C.git_remote_load(cremote, self._repo, names.strings[i])
-                check_error(err)
-
-                l[i] = Remote(self, cremote[0])
-            return l
-        finally:
-            C.git_strarray_free(names)
+        return self.remotes.create(name, url)
 
     #
     # Configuration

@@ -32,8 +32,8 @@
 #include <Python.h>
 #include <git2.h>
 
-#if !(LIBGIT2_VER_MAJOR == 0 && LIBGIT2_VER_MINOR == 21)
-#error You need a compatible libgit2 version (v0.21.x)
+#if !(LIBGIT2_VER_MAJOR == 0 && LIBGIT2_VER_MINOR == 22)
+#error You need a compatible libgit2 version (v0.22.x)
 #endif
 
 /*
@@ -47,6 +47,7 @@ typedef struct {
     git_repository *repo;
     PyObject *index;  /* It will be None for a bare repository */
     PyObject *config; /* It will be None for a bare repository */
+    int owned;    /* _from_c() sometimes means we don't own the C pointer */
 } Repository;
 
 
@@ -79,7 +80,7 @@ typedef struct {
     PyObject_HEAD
     Repository *repo;
     git_note *note;
-    char* annotated_id;
+    PyObject* annotated_id;
 } Note;
 
 typedef struct {
@@ -90,12 +91,12 @@ typedef struct {
 } NoteIter;
 
 
-/* git _diff */
-SIMPLE_TYPE(Diff, git_diff, list)
+/* git_diff */
+SIMPLE_TYPE(Diff, git_diff, diff)
 
 typedef struct {
     PyObject_HEAD
-    Diff* diff;
+    Diff *diff;
     size_t i;
     size_t n;
 } DiffIter;
@@ -103,10 +104,10 @@ typedef struct {
 typedef struct {
     PyObject_HEAD
     PyObject* hunks;
-    const char * old_file_path;
-    const char * new_file_path;
-    char* old_id;
-    char* new_id;
+    char * old_file_path;
+    char * new_file_path;
+    PyObject* old_id;
+    PyObject* new_id;
     char status;
     unsigned similarity;
     unsigned additions;
@@ -164,8 +165,8 @@ typedef Reference Branch;
 typedef struct {
     PyObject_HEAD
     git_signature *signature;
-    char *oid_old;
-    char *oid_new;
+    PyObject *oid_old;
+    PyObject *oid_new;
     char *message;
 } RefLogEntry;
 

@@ -60,8 +60,8 @@ RefLogIter_iternext(RefLogIter *self)
         entry = git_reflog_entry_byindex(self->reflog, self->i);
         py_entry = PyObject_New(RefLogEntry, &RefLogEntryType);
 
-        py_entry->oid_old = git_oid_allocfmt(git_reflog_entry_id_old(entry));
-        py_entry->oid_new = git_oid_allocfmt(git_reflog_entry_id_new(entry));
+        py_entry->oid_old = git_oid_to_python(git_reflog_entry_id_old(entry));
+        py_entry->oid_new = git_oid_to_python(git_reflog_entry_id_new(entry));
         py_entry->message = strdup(git_reflog_entry_message(entry));
         err = git_signature_dup(&py_entry->signature,
                                 git_reflog_entry_committer(entry));
@@ -431,16 +431,16 @@ RefLogEntry_init(RefLogEntry *self, PyObject *args, PyObject *kwds)
 static void
 RefLogEntry_dealloc(RefLogEntry *self)
 {
-    free(self->oid_old);
-    free(self->oid_new);
+    Py_CLEAR(self->oid_old);
+    Py_CLEAR(self->oid_new);
     free(self->message);
     git_signature_free(self->signature);
     PyObject_Del(self);
 }
 
 PyMemberDef RefLogEntry_members[] = {
-    MEMBER(RefLogEntry, oid_new, T_STRING, "New oid."),
-    MEMBER(RefLogEntry, oid_old, T_STRING, "Old oid."),
+    MEMBER(RefLogEntry, oid_new, T_OBJECT, "New oid."),
+    MEMBER(RefLogEntry, oid_old, T_OBJECT, "Old oid."),
     MEMBER(RefLogEntry, message, T_STRING, "Message."),
     {NULL}
 };
