@@ -6,6 +6,7 @@ python-pygit2 (0.22.0-1) unstable; urgency=medium
   * Ran wrap-and-sort.
   * Removed version in Build-Depends on python{3,}-all-dev.
   * Overrides dh_auto_clean to allow easier gbp builds.
+  * Added PYTHON_PATH=. when running unit tests (Closes: #786509).
 
  -- Thomas Goirand <zigo@debian.org>  Tue, 26 May 2015 10:39:26 +0200
 
