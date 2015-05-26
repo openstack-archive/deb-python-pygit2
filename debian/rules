@@ -31,6 +31,9 @@ ifeq (,$(findstring nocheck, $(DEB_BUILD_OPTIONS)))
 	done
 endif
 
+override_dh_auto_clean:
+	echo "noop"
+
 override_dh_clean:
 	dh_clean -O--buildsystem=python_distutils
 	rm -rf build
