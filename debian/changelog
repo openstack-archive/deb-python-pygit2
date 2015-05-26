@@ -1,6 +1,8 @@
 python-pygit2 (0.22.0-1) unstable; urgency=medium
 
-  * New upstream release.
+  * New upstream release:
+    - Adds support for libgit2 >= 0.22 which unfortunately is incompatible
+    with previous version, so we restrict to that (Closes: #786597).
   * Ran wrap-and-sort.
   * Removed version in Build-Depends on python{3,}-all-dev.
   * Overrides dh_auto_clean to allow easier gbp builds.
