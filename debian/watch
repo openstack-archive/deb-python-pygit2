@@ -1,3 +1,4 @@
 version=3
-http://pypi.python.org/packages/source/p/pygit2/ pygit2-(.*).tar.gz
+opts="uversionmangle=s/\.(b|rc)/~$1/" \
+https://github.com/libgit2/pygit2/tags .*/v(\d[\d\.]+)\.tar\.gz
 
