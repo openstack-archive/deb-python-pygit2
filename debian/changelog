@@ -1,3 +1,9 @@
+python-pygit2 (0.22.0-3) unstable; urgency=medium
+
+  * Depends on version >= 0.9.2 of python-cffi (Closes: #788095).
+
+ -- Thomas Goirand <zigo@debian.org>  Wed, 10 Jun 2015 17:39:37 +0200
+
 python-pygit2 (0.22.0-2) unstable; urgency=medium
 
   * Removed broken unit tests (Closes: #786509).
