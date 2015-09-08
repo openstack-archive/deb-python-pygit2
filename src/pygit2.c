@@ -44,8 +44,12 @@ extern PyTypeObject ObjectType;
 extern PyTypeObject CommitType;
 extern PyTypeObject DiffType;
 extern PyTypeObject DiffIterType;
+extern PyTypeObject DiffDeltaType;
+extern PyTypeObject DiffFileType;
+extern PyTypeObject DiffHunkType;
+extern PyTypeObject DiffLineType;
+extern PyTypeObject DiffStatsType;
 extern PyTypeObject PatchType;
-extern PyTypeObject HunkType;
 extern PyTypeObject TreeType;
 extern PyTypeObject TreeBuilderType;
 extern PyTypeObject TreeEntryType;
@@ -269,10 +273,11 @@ moduleinit(PyObject* m)
     ADD_CONSTANT_INT(m, GIT_STATUS_WT_MODIFIED)
     ADD_CONSTANT_INT(m, GIT_STATUS_WT_DELETED)
     ADD_CONSTANT_INT(m, GIT_STATUS_IGNORED) /* Flags for ignored files */
+    ADD_CONSTANT_INT(m, GIT_STATUS_CONFLICTED)
     /* Different checkout strategies */
     ADD_CONSTANT_INT(m, GIT_CHECKOUT_NONE)
     ADD_CONSTANT_INT(m, GIT_CHECKOUT_SAFE)
-    ADD_CONSTANT_INT(m, GIT_CHECKOUT_SAFE_CREATE)
+    ADD_CONSTANT_INT(m, GIT_CHECKOUT_RECREATE_MISSING)
     ADD_CONSTANT_INT(m, GIT_CHECKOUT_FORCE)
     ADD_CONSTANT_INT(m, GIT_CHECKOUT_ALLOW_CONFLICTS)
     ADD_CONSTANT_INT(m, GIT_CHECKOUT_REMOVE_UNTRACKED)
@@ -287,11 +292,19 @@ moduleinit(PyObject* m)
      */
     INIT_TYPE(DiffType, NULL, NULL)
     INIT_TYPE(DiffIterType, NULL, NULL)
+    INIT_TYPE(DiffDeltaType, NULL, NULL)
+    INIT_TYPE(DiffFileType, NULL, NULL)
+    INIT_TYPE(DiffHunkType, NULL, NULL)
+    INIT_TYPE(DiffLineType, NULL, NULL)
+    INIT_TYPE(DiffStatsType, NULL, NULL)
     INIT_TYPE(PatchType, NULL, NULL)
-    INIT_TYPE(HunkType, NULL, NULL)
     ADD_TYPE(m, Diff)
+    ADD_TYPE(m, DiffDelta)
+    ADD_TYPE(m, DiffFile)
+    ADD_TYPE(m, DiffHunk)
+    ADD_TYPE(m, DiffLine)
+    ADD_TYPE(m, DiffStats)
     ADD_TYPE(m, Patch)
-    ADD_TYPE(m, Hunk)
     ADD_CONSTANT_INT(m, GIT_DIFF_NORMAL)
     ADD_CONSTANT_INT(m, GIT_DIFF_REVERSE)
     ADD_CONSTANT_INT(m, GIT_DIFF_FORCE_TEXT)
@@ -313,6 +326,11 @@ moduleinit(PyObject* m)
     ADD_CONSTANT_INT(m, GIT_DIFF_INCLUDE_TYPECHANGE)
     ADD_CONSTANT_INT(m, GIT_DIFF_INCLUDE_TYPECHANGE_TREES)
     ADD_CONSTANT_INT(m, GIT_DIFF_RECURSE_IGNORED_DIRS)
+    ADD_CONSTANT_INT(m, GIT_DIFF_STATS_NONE)
+    ADD_CONSTANT_INT(m, GIT_DIFF_STATS_FULL)
+    ADD_CONSTANT_INT(m, GIT_DIFF_STATS_SHORT)
+    ADD_CONSTANT_INT(m, GIT_DIFF_STATS_NUMBER)
+    ADD_CONSTANT_INT(m, GIT_DIFF_STATS_INCLUDE_SUMMARY)
     /* Flags for diff find similar */
     /* --find-renames */
     ADD_CONSTANT_INT(m, GIT_DIFF_FIND_RENAMES)
@@ -324,6 +342,23 @@ moduleinit(PyObject* m)
     ADD_CONSTANT_INT(m, GIT_DIFF_FIND_COPIES_FROM_UNMODIFIED)
     /* --break-rewrites=/M */
     ADD_CONSTANT_INT(m, GIT_DIFF_FIND_AND_BREAK_REWRITES)
+
+    /* DiffDelta and DiffFile flags */
+    ADD_CONSTANT_INT(m, GIT_DIFF_FLAG_BINARY)
+    ADD_CONSTANT_INT(m, GIT_DIFF_FLAG_NOT_BINARY)
+    ADD_CONSTANT_INT(m, GIT_DIFF_FLAG_VALID_ID)
+
+    /* DiffDelta.status */
+    ADD_CONSTANT_INT(m, GIT_DELTA_UNMODIFIED)
+    ADD_CONSTANT_INT(m, GIT_DELTA_ADDED)
+    ADD_CONSTANT_INT(m, GIT_DELTA_DELETED)
+    ADD_CONSTANT_INT(m, GIT_DELTA_MODIFIED)
+    ADD_CONSTANT_INT(m, GIT_DELTA_RENAMED)
+    ADD_CONSTANT_INT(m, GIT_DELTA_COPIED)
+    ADD_CONSTANT_INT(m, GIT_DELTA_IGNORED)
+    ADD_CONSTANT_INT(m, GIT_DELTA_UNTRACKED)
+    ADD_CONSTANT_INT(m, GIT_DELTA_TYPECHANGE)
+    ADD_CONSTANT_INT(m, GIT_DELTA_UNREADABLE)
 
     /* Config */
     ADD_CONSTANT_INT(m, GIT_CONFIG_LEVEL_LOCAL);

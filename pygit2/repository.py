@@ -40,7 +40,7 @@ else:
 # Import from pygit2
 from _pygit2 import Repository as _Repository
 from _pygit2 import Oid, GIT_OID_HEXSZ, GIT_OID_MINPREFIXLEN
-from _pygit2 import GIT_CHECKOUT_SAFE_CREATE, GIT_DIFF_NORMAL
+from _pygit2 import GIT_CHECKOUT_SAFE, GIT_CHECKOUT_RECREATE_MISSING, GIT_DIFF_NORMAL
 from _pygit2 import GIT_FILEMODE_LINK
 from _pygit2 import Reference, Tree, Commit, Blob
 
@@ -51,6 +51,7 @@ from .index import Index
 from .remote import RemoteCollection
 from .blame import Blame
 from .utils import to_bytes, is_string
+from .submodule import Submodule
 
 
 class Repository(_Repository):
@@ -77,6 +78,14 @@ class Repository(_Repository):
         ffi.buffer(repo_cptr)[:] = self._pointer[:]
         self._repo = repo_cptr[0]
 
+    def lookup_submodule(self, path):
+        csub = ffi.new('git_submodule **')
+        cpath = ffi.new('char[]', to_bytes(path))
+
+        err = C.git_submodule_lookup(csub, self._repo, cpath)
+        check_error(err)
+        return Submodule._from_c(self, csub[0])
+
     #
     # Mapping interface
     #
@@ -100,13 +109,10 @@ class Repository(_Repository):
     # Remotes
     #
     def create_remote(self, name, url):
-        """create_remote(name, url) -> Remote
-
-        Creates a new remote.
+        """Create a new remote. Return a <Remote> object.
 
         This method is deprecated, please use Remote.remotes.create()
         """
-
         return self.remotes.create(name, url)
 
     #
@@ -114,12 +120,12 @@ class Repository(_Repository):
     #
     @property
     def config(self):
-        """The configuration file for this repository
+        """The configuration file for this repository.
 
         If a the configuration hasn't been set yet, the default config for
         repository will be returned, including global and system configurations
-        (if they are available)."""
-
+        (if they are available).
+        """
         cconfig = ffi.new('git_config **')
         err = C.git_repository_config(cconfig, self._repo)
         check_error(err)
@@ -131,8 +137,8 @@ class Repository(_Repository):
         """A snapshot for this repositiory's configuration
 
         This allows reads over multiple values to use the same version
-        of the configuration files"""
-
+        of the configuration files.
+        """
         cconfig = ffi.new('git_config **')
         err = C.git_repository_config_snapshot(cconfig, self._repo)
         check_error(err)
@@ -143,9 +149,8 @@ class Repository(_Repository):
     # References
     #
     def create_reference(self, name, target, force=False):
-        """
-        Create a new reference "name" which points to an object or to another
-        reference.
+        """Create a new reference "name" which points to an object or to
+        another reference.
 
         Based on the type and value of the target parameter, this method tries
         to guess whether it is a direct or a symbolic reference.
@@ -185,8 +190,8 @@ class Repository(_Repository):
         # References we need to keep to strings and so forth
         refs = []
 
-        # pygit2's default is SAFE_CREATE
-        copts.checkout_strategy = GIT_CHECKOUT_SAFE_CREATE
+        # pygit2's default is SAFE | RECREATE_MISSING
+        copts.checkout_strategy = GIT_CHECKOUT_SAFE | GIT_CHECKOUT_RECREATE_MISSING
         # and go through the arguments to see what the user wanted
         if strategy:
             copts.checkout_strategy = strategy
@@ -230,7 +235,7 @@ class Repository(_Repository):
         Checkout the given reference using the given strategy, and update
         the HEAD.
         The reference may be a reference name or a Reference object.
-        The default strategy is GIT_CHECKOUT_SAFE_CREATE.
+        The default strategy is GIT_CHECKOUT_SAFE | GIT_CHECKOUT_RECREATE_MISSING.
 
         To checkout from the HEAD, just pass 'HEAD'::
 
@@ -246,7 +251,7 @@ class Repository(_Repository):
           the current branch will be switched to this one.
 
         :param int strategy: A ``GIT_CHECKOUT_`` value. The default is
-          ``GIT_CHECKOUT_SAFE_CREATE``.
+          ``GIT_CHECKOUT_SAFE``.
 
         :param str directory: Alternative checkout path to workdir.
 
@@ -276,50 +281,29 @@ class Repository(_Repository):
         else:
             from_ = head.target.hex
 
-        try:
-            signature = self.default_signature
-        except Exception:
-            signature = None
-
-        reflog_text = "checkout: moving from %s to %s" % (from_, reference)
-        self.set_head(refname, signature, reflog_text)
+        self.set_head(refname)
 
     #
     # Setting HEAD
     #
-    def set_head(self, target, signature=None, message=None):
+    def set_head(self, target):
         """Set HEAD to point to the given target
 
         Arguments:
 
         target
             The new target for HEAD. Can be a string or Oid (to detach)
-
-        signature
-            Signature to use for the reflog. If not provided, the repository's
-            default will be used
-
-        message
-            Message to use for the reflog
         """
-
-        sig_ptr = ffi.new('git_signature **')
-        if signature:
-            ffi.buffer(sig_ptr)[:] = signature._pointer[:]
-
-        message_ptr = ffi.NULL
-        if message_ptr:
-            message_ptr = to_bytes(message)
 
         if isinstance(target, Oid):
             oid = ffi.new('git_oid *')
             ffi.buffer(oid)[:] = target.raw[:]
-            err = C.git_repository_set_head_detached(self._repo, oid, sig_ptr[0], message_ptr)
+            err = C.git_repository_set_head_detached(self._repo, oid)
             check_error(err)
             return
 
         # if it's a string, then it's a reference name
-        err = C.git_repository_set_head(self._repo, to_bytes(target), sig_ptr[0], message_ptr)
+        err = C.git_repository_set_head(self._repo, to_bytes(target))
         check_error(err)
 
     #
@@ -381,14 +365,12 @@ class Repository(_Repository):
             try:
                 obj = obj.peel(Blob)
             except Exception:
-                pass
-
-            # And if that failed, try to get a tree, raising a type
-            # error if that still doesn't work
-            try:
-                obj = obj.peel(Tree)
-            except Exception:
-                raise TypeError('unexpected "%s"' % type(obj))
+                # And if that failed, try to get a tree, raising a type
+                # error if that still doesn't work
+                try:
+                    obj = obj.peel(Tree)
+                except Exception:
+                    raise TypeError('unexpected "%s"' % type(obj))
 
             return obj
 
@@ -415,13 +397,12 @@ class Repository(_Repository):
 
         # Case 4: Diff blob to blob
         if isinstance(a, Blob) and isinstance(b, Blob):
-            raise NotImplementedError('git_diff_blob_to_blob()')
+            return a.diff(b)
 
         raise ValueError("Only blobs and treeish can be diffed")
 
     def state_cleanup(self):
-        """
-        Remove all the metadata associated with an ongoing command like
+        """Remove all the metadata associated with an ongoing command like
         merge, revert, cherry-pick, etc. For example: MERGE_HEAD, MERGE_MSG,
         etc.
         """
@@ -486,8 +467,7 @@ class Repository(_Repository):
     #
     @property
     def index(self):
-        """Index representing the repository's index file
-        """
+        """Index representing the repository's index file."""
         cindex = ffi.new('git_index **')
         err = C.git_repository_index(cindex, self._repo)
         check_error(err, True)
@@ -497,6 +477,67 @@ class Repository(_Repository):
     #
     # Merging
     #
+
+    @staticmethod
+    def _merge_options(favor):
+        """Return a 'git_merge_opts *'"""
+        def favor_to_enum(favor):
+            if favor == 'normal':
+                return C.GIT_MERGE_FILE_FAVOR_NORMAL
+            elif favor == 'ours':
+                return C.GIT_MERGE_FILE_FAVOR_OURS
+            elif favor == 'theirs':
+                return C.GIT_MERGE_FILE_FAVOR_THEIRS
+            elif favor == 'union':
+                return C.GIT_MERGE_FILE_FAVOR_UNION
+            else:
+                return None
+
+        favor_val = favor_to_enum(favor)
+        if favor_val is None:
+            raise ValueError("unkown favor value %s" % favor)
+
+        opts = ffi.new('git_merge_options *')
+        err = C.git_merge_init_options(opts, C.GIT_MERGE_OPTIONS_VERSION)
+        check_error(err)
+
+        opts.file_favor = favor_val
+
+        return opts
+
+    def merge_file_from_index(self, ancestor, ours, theirs):
+        """Merge files from index. Return a string with the merge result
+        containing possible conflicts.
+
+        ancestor
+            The index entry which will be used as a common
+            ancestor.
+        ours
+            The index entry to take as "ours" or base.
+        theirs
+            The index entry which will be merged into "ours"
+        """
+        cmergeresult = ffi.new('git_merge_file_result *')
+
+        cancestor, ancestor_str_ref = (
+            ancestor._to_c() if ancestor is not None else (ffi.NULL, ffi.NULL))
+        cours, ours_str_ref = (
+            ours._to_c() if ours is not None else (ffi.NULL, ffi.NULL))
+        ctheirs, theirs_str_ref = (
+            theirs._to_c() if theirs is not None else (ffi.NULL, ffi.NULL))
+
+        err = C.git_merge_file_from_index(
+                cmergeresult, self._repo,
+                cancestor, cours, ctheirs,
+                ffi.NULL);
+        check_error(err)
+
+        ret = ffi.string(cmergeresult.ptr,
+                cmergeresult.len).decode('utf-8')
+        C.git_merge_file_result_free(cmergeresult)
+
+        return ret
+
     def merge_commits(self, ours, theirs, favor='normal'):
         """Merge two arbitrary commits
 
@@ -522,21 +563,9 @@ class Repository(_Repository):
         Returns an index with the result of the merge
 
         """
-        def favor_to_enum(favor):
-            if favor == 'normal':
-                return C.GIT_MERGE_FILE_FAVOR_NORMAL
-            elif favor == 'ours':
-                return C.GIT_MERGE_FILE_FAVOR_OURS
-            elif favor == 'theirs':
-                return C.GIT_MERGE_FILE_FAVOR_THEIRS
-            elif favor == 'union':
-                return C.GIT_MERGE_FILE_FAVOR_UNION
-            else:
-                return None
 
         ours_ptr = ffi.new('git_commit **')
         theirs_ptr = ffi.new('git_commit **')
-        opts = ffi.new('git_merge_options *')
         cindex = ffi.new('git_index **')
 
         if is_string(ours) or isinstance(ours, Oid):
@@ -547,14 +576,7 @@ class Repository(_Repository):
         ours = ours.peel(Commit)
         theirs = theirs.peel(Commit)
 
-        err = C.git_merge_init_options(opts, C.GIT_MERGE_OPTIONS_VERSION)
-        check_error(err)
-
-        favor_val = favor_to_enum(favor)
-        if favor_val is None:
-            raise ValueError("unkown favor value %s" % favor)
-
-        opts.file_favor = favor_val
+        opts = self._merge_options(favor)
 
         ffi.buffer(ours_ptr)[:] = ours._pointer[:]
         ffi.buffer(theirs_ptr)[:] = theirs._pointer[:]
@@ -563,14 +585,69 @@ class Repository(_Repository):
         check_error(err)
 
         return Index.from_c(self, cindex)
+
+    def merge_trees(self, ancestor, ours, theirs, favor='normal'):
+        """Merge two trees
+
+        Arguments:
+
+        ancestor
+            The tree which is the common ancestor between 'ours' and 'theirs'
+        ours
+            The commit to take as "ours" or base.
+        theirs
+            The commit which will be merged into "ours"
+        favor
+            How to deal with file-level conflicts. Can be one of
+
+            * normal (default). Conflicts will be preserved.
+            * ours. The "ours" side of the conflict region is used.
+            * theirs. The "theirs" side of the conflict region is used.
+            * union. Unique lines from each side will be used.
+
+            for all but NORMAL, the index will not record a conflict.
+
+        Returns an Index that reflects the result of the merge.
+        """
+
+        ancestor_ptr = ffi.new('git_tree **')
+        ours_ptr = ffi.new('git_tree **')
+        theirs_ptr = ffi.new('git_tree **')
+        cindex = ffi.new('git_index **')
+
+        if is_string(ancestor) or isinstance(ancestor, Oid):
+            ancestor = self[ancestor]
+        if is_string(ours) or isinstance(ours, Oid):
+            ours = self[ours]
+        if is_string(theirs) or isinstance(theirs, Oid):
+            theirs = self[theirs]
+
+        ancestor = ancestor.peel(Tree)
+        ours = ours.peel(Tree)
+        theirs = theirs.peel(Tree)
+
+        opts = self._merge_options(favor)
+
+        ffi.buffer(ancestor_ptr)[:] = ancestor._pointer[:]
+        ffi.buffer(ours_ptr)[:] = ours._pointer[:]
+        ffi.buffer(theirs_ptr)[:] = theirs._pointer[:]
+
+        err = C.git_merge_trees(cindex, self._repo, ancestor_ptr[0], ours_ptr[0], theirs_ptr[0], opts)
+        check_error(err)
+
+        return Index.from_c(self, cindex)
+
     #
     # Utility for writing a tree into an archive
     #
-    def write_archive(self, treeish, archive, timestamp=None):
+    def write_archive(self, treeish, archive, timestamp=None, prefix=''):
         """Write treeish into an archive
 
         If no timestamp is provided and 'treeish' is a commit, its committer
         timestamp will be used. Otherwise the current time will be used.
+
+        All path names in the archive are added to 'prefix', which defaults to
+        an empty string.
 
         Arguments:
 
@@ -580,6 +657,8 @@ class Repository(_Repository):
             An archive from the 'tarfile' module
         timestamp
             Timestamp to use for the files in the archive.
+        prefix
+            Extra prefix to add to the path names in the archive.
 
         Example::
 
@@ -615,7 +694,7 @@ class Repository(_Repository):
 
         for entry in index:
             content = self[entry.id].read_raw()
-            info = tarfile.TarInfo(entry.path)
+            info = tarfile.TarInfo(prefix + entry.path)
             info.size = len(content)
             info.mtime = timestamp
             info.uname = info.gname = 'root' # just because git does this
@@ -623,5 +702,106 @@ class Repository(_Repository):
                 info.type = archive.SYMTYPE
                 info.linkname = content
                 info.mode = 0o777 # symlinks get placeholder
+                info.size = 0
+                archive.addfile(info)
+            else:
+                archive.addfile(info, StringIO(content))
 
-            archive.addfile(info, StringIO(content))
+    #
+    # Ahead-behind, which mostly lives on its own namespace
+    #
+    def ahead_behind(self, local, upstream):
+        """Calculate how many different commits are in the non-common parts
+        of the history between the two given ids.
+
+        Ahead is how many commits are in the ancestry of the 'local'
+        commit which are not in the 'upstream' commit. Behind is the
+        opposite.
+
+        Arguments
+
+        local
+            The commit which is considered the local or current state
+        upstream
+            The commit which is considered the upstream
+
+        Returns a tuple of two integers with the number of commits ahead and
+        behind respectively.
+        """
+
+        if not isinstance(local, Oid):
+            local = self.expand_id(local)
+
+        if not isinstance(upstream, Oid):
+            upstream = self.expand_id(upstream)
+
+        ahead, behind = ffi.new('size_t*'), ffi.new('size_t*')
+        oid1, oid2 = ffi.new('git_oid *'), ffi.new('git_oid *')
+        ffi.buffer(oid1)[:] = local.raw[:]
+        ffi.buffer(oid2)[:] = upstream.raw[:]
+        err = C.git_graph_ahead_behind(ahead, behind, self._repo, oid1, oid2)
+        check_error(err)
+
+        return int(ahead[0]), int(behind[0])
+
+    #
+    # Git attributes
+    #
+    def get_attr(self, path, name, flags=0):
+        """Retrieve an attribute for a file by path
+
+        Arguments
+
+        path
+            The path of the file to look up attributes for, relative to the
+            workdir root
+        name
+            The name of the attribute to look up
+        flags
+            A combination of GIT_ATTR_CHECK_ flags which determine the
+            lookup order
+
+        Returns either a boolean, None (if the value is unspecified) or string
+        with the value of the attribute.
+        """
+
+        cvalue = ffi.new('char **')
+        err = C.git_attr_get(cvalue, self._repo, flags, to_bytes(path), to_bytes(name))
+        check_error(err)
+
+        # Now let's see if we can figure out what the value is
+        attr_kind = C.git_attr_value(cvalue[0])
+        if attr_kind == C.GIT_ATTR_UNSPECIFIED_T:
+            return None
+        elif attr_kind == C.GIT_ATTR_TRUE_T:
+            return True
+        elif attr_kind == C.GIT_ATTR_FALSE_T:
+            return False
+        elif attr_kind == C.GIT_ATTR_VALUE_T:
+            return ffi.string(cvalue[0]).decode('utf-8')
+
+        assert False, "the attribute value from libgit2 is invalid"
+
+    #
+    # Identity for reference operations
+    #
+    @property
+    def ident(self):
+        cname = ffi.new('char **')
+        cemail = ffi.new('char **')
+
+        err = C.git_repository_ident(cname, cemail, self._repo)
+        check_error(err)
+
+        return (ffi.string(cname).decode('utf-8'), ffi.string(cemail).decode('utf-8'))
+
+    def set_ident(self, name, email):
+        """Set the identity to be used for reference operations
+
+        Updates to some references also append data to their
+        reflog. You can use this method to set what identity will be
+        used. If none is set, it will be read from the configuration.
+        """
+
+        err = C.git_repository_set_ident(self._repo, to_bytes(name), to_bytes(email))
+        check_error(err)

@@ -87,10 +87,20 @@ TreeEntry_oid__get__(TreeEntry *self)
     return TreeEntry_id__get__(self);
 }
 
+static int
+compare_ids(TreeEntry *a, TreeEntry *b)
+{
+    const git_oid *id_a, *id_b;
+    id_a = git_tree_entry_id(a->entry);
+    id_b = git_tree_entry_id(b->entry);
+    return git_oid_cmp(id_a, id_b);
+}
+
 PyObject *
 TreeEntry_richcompare(PyObject *a, PyObject *b, int op)
 {
     PyObject *res;
+    TreeEntry *ta, *tb;
     int cmp;
 
     /* We only support comparing to another tree entry */
@@ -99,7 +109,14 @@ TreeEntry_richcompare(PyObject *a, PyObject *b, int op)
         return Py_NotImplemented;
     }
 
-    cmp =git_tree_entry_cmp(((TreeEntry*)a)->entry, ((TreeEntry*)b)->entry);
+    ta = (TreeEntry *) a;
+    tb = (TreeEntry *) b;
+
+    /* This is sorting order, if they sort equally, we still need to compare the ids */
+    cmp = git_tree_entry_cmp(ta->entry, tb->entry);
+    if (cmp == 0)
+        cmp = compare_ids(ta, tb);
+
     switch (op) {
         case Py_LT:
             res = (cmp <= 0) ? Py_True: Py_False;
@@ -137,6 +154,16 @@ TreeEntry_hex__get__(TreeEntry *self)
     return git_oid_to_py_str(git_tree_entry_id(self->entry));
 }
 
+PyObject *
+TreeEntry_repr(TreeEntry *self)
+{
+    char str[GIT_OID_HEXSZ + 1] = { 0 };
+    const char *typename;
+
+    typename = git_object_type2string(git_tree_entry_type(self->entry));
+    git_oid_fmt(str, git_tree_entry_id(self->entry));
+    return PyString_FromFormat("pygit2.TreeEntry('%s', %s, %s)", git_tree_entry_name(self->entry), typename, str);
+}
 
 PyGetSetDef TreeEntry_getseters[] = {
     GETTER(TreeEntry, filemode),
@@ -146,7 +173,6 @@ PyGetSetDef TreeEntry_getseters[] = {
     GETTER(TreeEntry, hex),
     {NULL}
 };
-
 
 PyDoc_STRVAR(TreeEntry__doc__, "TreeEntry objects.");
 
@@ -160,7 +186,7 @@ PyTypeObject TreeEntryType = {
     0,                                         /* tp_getattr        */
     0,                                         /* tp_setattr        */
     0,                                         /* tp_compare        */
-    0,                                         /* tp_repr           */
+    (reprfunc)TreeEntry_repr,                  /* tp_repr           */
     0,                                         /* tp_as_number      */
     0,                                         /* tp_as_sequence    */
     0,                                         /* tp_as_mapping     */

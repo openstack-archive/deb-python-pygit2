@@ -32,7 +32,6 @@ pygit2 at run-time.
 
 # Import from the Standard Library
 from binascii import crc32
-import inspect
 import codecs
 import os
 from os import getenv
@@ -43,7 +42,7 @@ import sys
 #
 # The version number of pygit2
 #
-__version__ = '0.22.0'
+__version__ = '0.23.0'
 
 
 #
@@ -79,7 +78,14 @@ def get_ffi():
     ffi = cffi.FFI()
 
     # Load C definitions
-    dir_path = dirname(abspath(inspect.getfile(inspect.currentframe())))
+    if getattr(sys, 'frozen', False):
+        if hasattr(sys, '_MEIPASS'):
+            dir_path = sys._MEIPASS
+        else:
+            dir_path = dirname(abspath(sys.executable))
+    else:
+        dir_path = dirname(abspath(__file__))
+
     decl_path = os.path.join(dir_path, 'decl.h')
     with codecs.open(decl_path, 'r', 'utf-8') as header:
         ffi.cdef(header.read())

@@ -50,34 +50,62 @@ def strarray_to_strings(arr):
     return l
 
 
-def strings_to_strarray(l):
-    """Convert a list of strings to a git_strarray
+class StrArray(object):
+    """A git_strarray wrapper
 
-    We return first the git_strarray* you can pass to libgit2 and a
-    list of references to the memory, which we must keep around for as
-    long as the git_strarray must live.
+    Use this in order to get a git_strarray* to pass to libgit2 out of a
+    list of strings. This has a context manager, which you should use, e.g.
+
+        with StrArray(list_of_strings) as arr:
+            C.git_function_that_takes_strarray(arr)
     """
 
-    if not isinstance(l, list):
-        raise TypeError("Value must be a list")
+    def __init__(self, l):
+        # Allow passing in None as lg2 typically considers them the same as empty
+        if l is None:
+            self.array = ffi.NULL
+            return
 
-    arr = ffi.new('git_strarray *')
-    strings = ffi.new('char *[]', len(l))
+        if not isinstance(l, list):
+            raise TypeError("Value must be a list")
 
-    # We need refs in order to keep a reference to the value returned
-    # by the ffi.new(). Otherwise, they will be freed and the memory
-    # re-used, with less than great consequences.
-    refs = [None] * len(l)
+        strings = [None] * len(l)
+        for i in range(len(l)):
+            if not is_string(l[i]):
+                raise TypeError("Value must be a string")
 
-    for i in range(len(l)):
-        if not is_string(l[i]):
-            raise TypeError("Value must be a string")
+            strings[i] = ffi.new('char []', to_bytes(l[i]))
 
-        s = ffi.new('char []', to_bytes(l[i]))
-        refs[i] = s
-        strings[i] = s
+        self._arr = ffi.new('char *[]', strings)
+        self._strings = strings
+        self.array = ffi.new('git_strarray *', [self._arr, len(strings)])
 
-    arr.strings = strings
-    arr.count = len(l)
+    def __enter__(self):
+        return self.array
 
-    return arr, refs
+    def __exit__(self, type, value, traceback):
+        pass
+
+
+class GenericIterator(object):
+    """Helper to easily implement an iterator.
+
+    The constructor gets a container which must implement __len__ and
+    __getitem__
+    """
+
+    def __init__(self, container):
+        self.container = container
+        self.length = len(container)
+        self.idx = 0
+
+    def next(self):
+        return self.__next__()
+
+    def __next__(self):
+        idx = self.idx
+        if idx >= self.length:
+            raise StopIteration
+
+        self.idx += 1
+        return self.container[idx]

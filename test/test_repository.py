@@ -156,6 +156,11 @@ class RepositoryTest(utils.BareRepoTestCase):
             commit.message)
         self.assertRaises(ValueError, self.repo.__getitem__, too_short_prefix)
 
+    def test_expand_id(self):
+        commit_sha = '5fe808e8953c12735680c257f56600cb0de44b10'
+        expanded = self.repo.expand_id(commit_sha[:7])
+        self.assertEqual(commit_sha, expanded.hex)
+
     @unittest.skipIf(__pypy__ is not None, "skip refcounts checks in pypy")
     def test_lookup_commit_refcount(self):
         start = sys.getrefcount(self.repo)
@@ -193,6 +198,39 @@ class RepositoryTest(utils.BareRepoTestCase):
         written_sha1 = self.repo.create_blob(data)
         self.assertEqual(hashed_sha1, written_sha1)
 
+    def test_conflicts_in_bare_repository(self):
+        def create_conflict_file(repo, branch, content):
+            oid = repo.create_blob(content.encode('utf-8'))
+            tb = repo.TreeBuilder()
+            tb.insert('conflict', oid, pygit2.GIT_FILEMODE_BLOB)
+            tree = tb.write()
+
+            sig = pygit2.Signature('Author', 'author@example.com')
+            commit = repo.create_commit(branch.name, sig, sig,
+                    'Conflict', tree, [branch.target])
+            self.assertIsNotNone(commit)
+            return commit
+
+        b1 = self.repo.create_branch('b1', self.repo.head.peel())
+        c1 = create_conflict_file(self.repo, b1, 'ASCII - abc')
+        b2 = self.repo.create_branch('b2', self.repo.head.peel())
+        c2 = create_conflict_file(self.repo, b2, 'Unicode - äüö')
+
+        index = self.repo.merge_commits(c1, c2)
+        self.assertIsNotNone(index.conflicts)
+
+        # ConflictCollection does not allow calling len(...) on it directly so
+        # we have to calculate length by iterating over its entries
+        self.assertEqual(sum(1 for _ in index.conflicts), 1)
+
+        (a, t, o) = index.conflicts['conflict']
+        diff = self.repo.merge_file_from_index(a, t, o)
+        self.assertEqual(diff, '''<<<<<<< conflict
+ASCII - abc
+=======
+Unicode - äüö
+>>>>>>> conflict
+''')
 
 class RepositoryTest_II(utils.RepoTestCase):
 
@@ -294,6 +332,24 @@ class RepositoryTest_II(utils.RepoTestCase):
             '4ec4389a8068641da2d6578db0419484972284c8')
         self.assertEqual(commit.hex,
                          'acecd5ea2924a4b900e7e149496e1f4b57976e51')
+
+        # Create a commit without any merge base to any other
+        sig = pygit2.Signature("me", "me@example.com")
+        indep = self.repo.create_commit(None, sig, sig, "a new root commit",
+                                        self.repo[commit].peel(pygit2.Tree).id, [])
+
+        self.assertEqual(None, self.repo.merge_base(indep, commit))
+
+    def test_ahead_behind(self):
+        ahead, behind = self.repo.ahead_behind('5ebeeebb320790caf276b9fc8b24546d63316533',
+                                               '4ec4389a8068641da2d6578db0419484972284c8')
+        self.assertEqual(1, ahead)
+        self.assertEqual(2, behind)
+
+        ahead, behind = self.repo.ahead_behind('4ec4389a8068641da2d6578db0419484972284c8',
+                                               '5ebeeebb320790caf276b9fc8b24546d63316533')
+        self.assertEqual(2, ahead)
+        self.assertEqual(1, behind)
 
     def test_reset_hard(self):
         ref = "5ebeeebb320790caf276b9fc8b24546d63316533"

@@ -17,9 +17,11 @@ Main porcelain commands
 .. toctree::
    :maxdepth: 1
 
+   git-cherry-pick (Apply the changes introduced by some existing commits.) <recipes/git-cherry-pick>
    git-init (Create an empty git repository or reinitialize an existing one.) <recipes/git-init>
    git-log (Show commit logs.) <recipes/git-log>
    git-show (Show various types of objects.) <recipes/git-show>
    git-tag (Create, list, delete or verify a tag object signed with GPG.) <recipes/git-tag>
+   git clone --mirror (Clone with a mirroring configuration) <recipes/git-clone-mirror>
 
 .. _git man page: https://www.kernel.org/pub/software/scm/git/docs/git.html

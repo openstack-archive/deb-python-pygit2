@@ -41,12 +41,39 @@ from .index import Index, IndexEntry
 from .remote import Remote, get_credentials
 from .repository import Repository
 from .settings import Settings
+from .submodule import Submodule
 from .utils import to_bytes, to_str
 from ._utils import __version__
 
 
+# Features
+features = C.git_libgit2_features()
+GIT_FEATURE_THREADS = C.GIT_FEATURE_THREADS
+GIT_FEATURE_HTTPS = C.GIT_FEATURE_HTTPS
+GIT_FEATURE_SSH = C.GIT_FEATURE_SSH
+
+# GIT_REPOSITORY_INIT_*
+GIT_REPOSITORY_INIT_OPTIONS_VERSION = C.GIT_REPOSITORY_INIT_OPTIONS_VERSION
+GIT_REPOSITORY_INIT_BARE = C.GIT_REPOSITORY_INIT_BARE
+GIT_REPOSITORY_INIT_NO_REINIT = C.GIT_REPOSITORY_INIT_NO_REINIT
+GIT_REPOSITORY_INIT_NO_DOTGIT_DIR = C.GIT_REPOSITORY_INIT_NO_DOTGIT_DIR
+GIT_REPOSITORY_INIT_MKDIR = C.GIT_REPOSITORY_INIT_MKDIR
+GIT_REPOSITORY_INIT_MKPATH = C.GIT_REPOSITORY_INIT_MKPATH
+GIT_REPOSITORY_INIT_EXTERNAL_TEMPLATE = C.GIT_REPOSITORY_INIT_EXTERNAL_TEMPLATE
+GIT_REPOSITORY_INIT_RELATIVE_GITLINK = C.GIT_REPOSITORY_INIT_RELATIVE_GITLINK
+GIT_REPOSITORY_INIT_SHARED_UMASK = C.GIT_REPOSITORY_INIT_SHARED_UMASK
+GIT_REPOSITORY_INIT_SHARED_GROUP = C.GIT_REPOSITORY_INIT_SHARED_GROUP
+GIT_REPOSITORY_INIT_SHARED_ALL = C.GIT_REPOSITORY_INIT_SHARED_ALL
+
+# GIT_ATTR_CHECK_*
+GIT_ATTR_CHECK_FILE_THEN_INDEX = C.GIT_ATTR_CHECK_FILE_THEN_INDEX
+GIT_ATTR_CHECK_INDEX_THEN_FILE = C.GIT_ATTR_CHECK_INDEX_THEN_FILE
+GIT_ATTR_CHECK_INDEX_ONLY      = C.GIT_ATTR_CHECK_INDEX_ONLY
+GIT_ATTR_CHECK_NO_SYSTEM       = C.GIT_ATTR_CHECK_NO_SYSTEM
+
+
 def init_repository(path, bare=False,
-                    flags=C.GIT_REPOSITORY_INIT_MKPATH,
+                    flags=GIT_REPOSITORY_INIT_MKPATH,
                     mode=0,
                     workdir_path=None,
                     description=None,
@@ -79,11 +106,12 @@ def init_repository(path, bare=False,
     """
     # Pre-process input parameters
     if bare:
-        flags |= C.GIT_REPOSITORY_INIT_BARE
+        flags |= GIT_REPOSITORY_INIT_BARE
 
     # Options
     options = ffi.new('git_repository_init_options *')
-    C.git_repository_init_init_options(options, C.GIT_REPOSITORY_INIT_OPTIONS_VERSION)
+    C.git_repository_init_init_options(options,
+                                       GIT_REPOSITORY_INIT_OPTIONS_VERSION)
     options.flags = flags
     options.mode = mode
 
@@ -250,12 +278,12 @@ def clone_repository(
 
     opts.bare = bare
     if credentials:
-        opts.remote_callbacks.credentials = _credentials_cb
-        opts.remote_callbacks.payload = d_handle
+        opts.fetch_opts.callbacks.credentials = _credentials_cb
+        opts.fetch_opts.callbacks.payload = d_handle
 
     if certificate:
-        opts.remote_callbacks.certificate_check = _certificate_cb
-        opts.remote_callbacks.payload = d_handle
+        opts.fetch_opts.callbacks.certificate_check = _certificate_cb
+        opts.fetch_opts.callbacks.payload = d_handle
 
     err = C.git_clone(crepo, to_bytes(url), to_bytes(path), opts)
 
@@ -267,8 +295,3 @@ def clone_repository(
     return Repository._from_c(crepo[0], owned=True)
 
 settings = Settings()
-
-features = C.git_libgit2_features()
-GIT_FEATURE_THREADS = C.GIT_FEATURE_THREADS
-GIT_FEATURE_HTTPS = C.GIT_FEATURE_HTTPS
-GIT_FEATURE_SSH = C.GIT_FEATURE_SSH

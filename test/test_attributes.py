@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# -*- coding: UTF-8 -*-
 #
 # Copyright 2010-2014 The pygit2 contributors
 #
@@ -25,40 +25,41 @@
 # the Free Software Foundation, 51 Franklin Street, Fifth Floor,
 # Boston, MA 02110-1301, USA.
 
+# Import from the future
+from __future__ import absolute_import
+from __future__ import unicode_literals, print_function
+
+# Import from the Standard Library
+import binascii
+import unittest
+import tempfile
+import os
+from os.path import join, realpath
+import sys
+
 # Import from pygit2
-from .ffi import ffi, C
-from _pygit2 import GitError
+from pygit2 import GIT_OBJ_ANY, GIT_OBJ_BLOB, GIT_OBJ_COMMIT
+from pygit2 import init_repository, clone_repository, discover_repository
+from pygit2 import Oid, Reference, hashfile
+import pygit2
+from . import utils
 
+try:
+    import __pypy__
+except ImportError:
+    __pypy__ = None
 
-value_errors = set([C.GIT_EEXISTS, C.GIT_EINVALIDSPEC, C.GIT_EEXISTS,
-                    C.GIT_EAMBIGUOUS])
+class RepositorySignatureTest(utils.RepoTestCase):
 
-def check_error(err, io=False):
-    if err >= 0:
-        return
+    def test_no_attr(self):
+        self.assertIsNone(self.repo.get_attr('file', 'foo'))
 
-    # Error message
-    giterr = C.giterr_last()
-    if giterr != ffi.NULL:
-        message = ffi.string(giterr.message).decode()
-    else:
-        message = "err %d (no message provided)" % err
+        with open(join(self.repo.workdir, '.gitattributes'), 'w+') as f:
+            print('*.py  text\n', file=f)
+            print('*.jpg -text\n', file=f)
+            print('*.sh  eol=lf\n', file=f)
 
-    # Translate to Python errors
-    if err in value_errors:
-        raise ValueError(message)
-
-    if err == C.GIT_ENOTFOUND:
-        if io:
-            raise IOError(message)
-
-        raise KeyError(message)
-
-    if err == C.GIT_EINVALIDSPEC:
-        raise ValueError(message)
-
-    if err == C.GIT_ITEROVER:
-        raise StopIteration()
-
-    # Generic Git error
-    raise GitError(message)
+        self.assertIsNone(self.repo.get_attr('file.py', 'foo'))
+        self.assertTrue(self.repo.get_attr('file.py', 'text'))
+        self.assertFalse(self.repo.get_attr('file.jpg', 'text'))
+        self.assertEqual("lf", self.repo.get_attr('file.sh', 'eol'))

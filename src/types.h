@@ -32,8 +32,8 @@
 #include <Python.h>
 #include <git2.h>
 
-#if !(LIBGIT2_VER_MAJOR == 0 && LIBGIT2_VER_MINOR == 22)
-#error You need a compatible libgit2 version (v0.22.x)
+#if !(LIBGIT2_VER_MAJOR == 0 && LIBGIT2_VER_MINOR == 23)
+#error You need a compatible libgit2 version (v0.23.x)
 #endif
 
 /*
@@ -90,6 +90,12 @@ typedef struct {
     char* ref;
 } NoteIter;
 
+/* git_patch */
+typedef struct {
+    PyObject_HEAD
+    git_patch *patch;
+    PyObject* hunks;
+} Patch;
 
 /* git_diff */
 SIMPLE_TYPE(Diff, git_diff, diff)
@@ -103,17 +109,22 @@ typedef struct {
 
 typedef struct {
     PyObject_HEAD
-    PyObject* hunks;
-    char * old_file_path;
-    char * new_file_path;
-    PyObject* old_id;
-    PyObject* new_id;
-    char status;
-    unsigned similarity;
-    unsigned additions;
-    unsigned deletions;
-    unsigned flags;
-} Patch;
+    PyObject *id;
+    char *path;
+    git_off_t size;
+    uint32_t flags;
+    uint16_t mode;
+} DiffFile;
+
+typedef struct {
+    PyObject_HEAD
+    git_delta_t status;
+    uint32_t flags;
+    uint16_t similarity;
+    uint16_t nfiles;
+    PyObject *old_file;
+    PyObject *new_file;
+} DiffDelta;
 
 typedef struct {
     PyObject_HEAD
@@ -122,8 +133,20 @@ typedef struct {
     int old_lines;
     int new_start;
     int new_lines;
-} Hunk;
+    PyObject *header;
+} DiffHunk;
 
+typedef struct {
+    PyObject_HEAD
+    char origin;
+    int old_lineno;
+    int new_lineno;
+    int num_lines;
+    git_off_t content_offset;
+    PyObject *content;
+} DiffLine;
+
+SIMPLE_TYPE(DiffStats, git_diff_stats, stats);
 
 /* git_tree_walk , git_treebuilder*/
 SIMPLE_TYPE(TreeBuilder, git_treebuilder, bld)
@@ -147,12 +170,6 @@ typedef struct {
     PyObject_HEAD
     git_index_entry entry;
 } IndexEntry;
-
-typedef struct {
-    PyObject_HEAD
-    Index *owner;
-    int i;
-} IndexIter;
 
 
 /* git_reference, git_reflog */

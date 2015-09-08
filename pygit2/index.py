@@ -32,7 +32,8 @@ from __future__ import absolute_import, unicode_literals
 from _pygit2 import Oid, Tree, Diff
 from .errors import check_error
 from .ffi import ffi, C
-from .utils import is_string, strings_to_strarray, to_bytes, to_str
+from .utils import is_string, to_bytes, to_str
+from .utils import GenericIterator, StrArray
 
 
 class Index(object):
@@ -92,7 +93,7 @@ class Index(object):
         return IndexEntry._from_c(centry)
 
     def __iter__(self):
-        return IndexIterator(self)
+        return GenericIterator(self)
 
     def read(self, force=True):
         """Update the contents the Index
@@ -109,8 +110,7 @@ class Index(object):
         check_error(err, True)
 
     def write(self):
-        """Write the contents of the Index to disk
-        """
+        """Write the contents of the Index to disk."""
         err = C.git_index_write(self._index)
         check_error(err, True)
 
@@ -119,9 +119,8 @@ class Index(object):
         check_error(err)
 
     def read_tree(self, tree):
-        """read_tree([Tree|Oid])
-
-        Replace the contents of the Index with those of a tree
+        """Replace the contents of the Index with those of the given tree,
+        expressed either as a <Tree> object or as an oid (string or <Oid>).
 
         The tree will be read recursively and all its children will also be
         inserted into the Index.
@@ -143,9 +142,8 @@ class Index(object):
         check_error(err)
 
     def write_tree(self, repo=None):
-        """write_tree([repo]) -> Oid
-
-        Create a tree out of the Index
+        """Create a tree out of the Index. Return the <Oid> object of the
+        written tree.
 
         The contents of the index will be written out to the object
         database. If there is no associated repository, 'repo' must be
@@ -163,10 +161,10 @@ class Index(object):
         check_error(err)
         return Oid(raw=bytes(ffi.buffer(coid)[:]))
 
-    def remove(self, path):
+    def remove(self, path, level=0):
         """Remove an entry from the Index.
         """
-        err = C.git_index_remove(self._index, to_bytes(path), 0)
+        err = C.git_index_remove(self._index, to_bytes(path), level)
         check_error(err, True)
 
     def add_all(self, pathspecs=[]):
@@ -175,18 +173,16 @@ class Index(object):
         If pathspecs are specified, only files matching those pathspecs will
         be added.
         """
-        arr, refs = strings_to_strarray(pathspecs)
-        err = C.git_index_add_all(self._index, arr, 0, ffi.NULL, ffi.NULL)
-        check_error(err, True)
+        with StrArray(pathspecs) as arr:
+            err = C.git_index_add_all(self._index, arr, 0, ffi.NULL, ffi.NULL)
+            check_error(err, True)
 
     def add(self, path_or_entry):
-        """add([path|entry])
+        """Add or update an entry in the Index.
 
-        Add or update an entry in the Index
-
-        If a path is given, that file will be added. The path must be
-        relative to the root of the worktree and the Index must be associated
-        with a repository.
+        If a path is given, that file will be added. The path must be relative
+        to the root of the worktree and the Index must be associated with a
+        repository.
 
         If an IndexEntry is given, that entry will be added or update in the
         Index without checking for the existence of the path or id.
@@ -205,12 +201,8 @@ class Index(object):
         check_error(err, True)
 
     def diff_to_workdir(self, flags=0, context_lines=3, interhunk_lines=0):
-        """diff_to_workdir(flags=0, context_lines=3, interhunk_lines=0) -> Diff
-
-        Diff the index against the working directory
-
-        Return a :py:class:`~pygit2.Diff` object with the differences
-        between the index and the working copy.
+        """Diff the index against the working directory. Return a <Diff> object
+        with the differences between the index and the working copy.
 
         Arguments:
 
@@ -241,12 +233,8 @@ class Index(object):
         return Diff.from_c(bytes(ffi.buffer(cdiff)[:]), self._repo)
 
     def diff_to_tree(self, tree, flags=0, context_lines=3, interhunk_lines=0):
-        """diff_to_tree(tree, flags=0, context_lines=3, interhunk_lines=0) -> Diff
-
-        Diff the index against a tree
-
-        Return a :py:class:`~pygit2.Diff` object with the differences between
-        the index and the given tree.
+        """Diff the index against a tree.  Return a <Diff> object with the
+        differences between the index and the given tree.
 
         Arguments:
 
@@ -365,26 +353,6 @@ class IndexEntry(object):
         entry.path = to_str(ffi.string(centry.path))
         entry.mode = centry.mode
         entry.id = Oid(raw=bytes(ffi.buffer(ffi.addressof(centry, 'id'))[:]))
-
-        return entry
-
-
-class IndexIterator(object):
-
-    def __init__(self, index):
-        self.index = index
-        self.n = 0
-        self.max = len(index)
-
-    def next(self):
-        return self.__next__()
-
-    def __next__(self):
-        if self.n >= self.max:
-            raise StopIteration
-
-        entry = self.index[self.n]
-        self.n += 1
 
         return entry
 

@@ -34,7 +34,7 @@ from .errors import check_error, GitError
 from .ffi import ffi, C
 from .credentials import KeypairFromAgent
 from .refspec import Refspec
-from .utils import to_bytes, strarray_to_strings, strings_to_strarray
+from .utils import to_bytes, strarray_to_strings, StrArray
 
 
 def maybe_string(ptr):
@@ -153,77 +153,44 @@ class Remote(object):
 
         return maybe_string(C.git_remote_url(self._remote))
 
-    @url.setter
-    def url(self, value):
-        err = C.git_remote_set_url(self._remote, to_bytes(value))
-        check_error(err)
-
     @property
     def push_url(self):
         """Push url of the remote"""
 
         return maybe_string(C.git_remote_pushurl(self._remote))
 
-    @push_url.setter
-    def push_url(self, value):
-        err = C.git_remote_set_pushurl(self._remote, to_bytes(value))
-        check_error(err)
-
     def save(self):
-        """save()
-
-        Save a remote to its repository's configuration"""
+        """Save a remote to its repository's configuration."""
 
         err = C.git_remote_save(self._remote)
         check_error(err)
 
-    def fetch(self, signature=None, message=None):
-        """fetch(signature, message) -> TransferProgress
-
-        Perform a fetch against this remote.
+    def fetch(self, refspecs=None, message=None):
+        """Perform a fetch against this remote. Returns a <TransferProgress>
+        object.
         """
 
-        # Get the default callbacks first
-        defaultcallbacks = ffi.new('git_remote_callbacks *')
-        err = C.git_remote_init_callbacks(defaultcallbacks, 1)
-        check_error(err)
+        fetch_opts = ffi.new('git_fetch_options *')
+        err = C.git_fetch_init_options(fetch_opts, C.GIT_FETCH_OPTIONS_VERSION)
 
-        # Build custom callback structure
-        callbacks = ffi.new('git_remote_callbacks *')
-        callbacks.version = 1
-        callbacks.sideband_progress = self._sideband_progress_cb
-        callbacks.transfer_progress = self._transfer_progress_cb
-        callbacks.update_tips = self._update_tips_cb
-        callbacks.credentials = self._credentials_cb
+        fetch_opts.callbacks.sideband_progress = self._sideband_progress_cb
+        fetch_opts.callbacks.transfer_progress = self._transfer_progress_cb
+        fetch_opts.callbacks.update_tips = self._update_tips_cb
+        fetch_opts.callbacks.credentials = self._credentials_cb
         # We need to make sure that this handle stays alive
         self._self_handle = ffi.new_handle(self)
-        callbacks.payload = self._self_handle
-
-        err = C.git_remote_set_callbacks(self._remote, callbacks)
-        try:
-            check_error(err)
-        except:
-            self._self_handle = None
-            raise
-
-        if signature:
-            ptr = signature._pointer[:]
-        else:
-            ptr = ffi.NULL
+        fetch_opts.callbacks.payload = self._self_handle
 
         self._stored_exception = None
 
         try:
-            err = C.git_remote_fetch(self._remote, ffi.NULL, ptr, to_bytes(message))
-            if self._stored_exception:
-                raise self._stored_exception
-
-            check_error(err)
+            with StrArray(refspecs) as arr:
+                err = C.git_remote_fetch(self._remote, arr, fetch_opts, to_bytes(message))
+                if self._stored_exception:
+                    raise self._stored_exception
+                check_error(err)
         finally:
-            # Even on error, clear stored callbacks and reset to default
             self._self_handle = None
-            err = C.git_remote_set_callbacks(self._remote, defaultcallbacks)
-            check_error(err)
 
         return TransferProgress(C.git_remote_stats(self._remote))
 
@@ -234,10 +201,7 @@ class Remote(object):
         return C.git_remote_refspec_count(self._remote)
 
     def get_refspec(self, n):
-        """get_refspec(n) -> Refspec
-
-        Return the refspec at the given position
-        """
+        """Return the <Refspec> object at the given position."""
         spec = C.git_remote_get_refspec(self._remote, n)
         return Refspec(self, spec)
 
@@ -251,12 +215,6 @@ class Remote(object):
 
         return strarray_to_strings(specs)
 
-    @fetch_refspecs.setter
-    def fetch_refspecs(self, l):
-        arr, refs = strings_to_strarray(l)
-        err = C.git_remote_set_fetch_refspecs(self._remote, arr)
-        check_error(err)
-
     @property
     def push_refspecs(self):
         """Refspecs that will be used for pushing"""
@@ -267,74 +225,29 @@ class Remote(object):
 
         return strarray_to_strings(specs)
 
-    @push_refspecs.setter
-    def push_refspecs(self, l):
-        arr, refs = strings_to_strarray(l)
-        err = C.git_remote_set_push_refspecs(self._remote, arr)
-        check_error(err)
-
-    def add_fetch(self, spec):
-        """add_fetch(refspec)
-
-        Add a fetch refspec (str) to the remote"""
-
-        err = C.git_remote_add_fetch(self._remote, to_bytes(spec))
-        check_error(err)
-
-    def add_push(self, spec):
-        """add_push(refspec)
-
-        Add a push refspec (str) to the remote"""
-
-        err = C.git_remote_add_push(self._remote, to_bytes(spec))
-        check_error(err)
-
-    def push(self, specs, signature=None, message=None):
-        """push(specs, signature, message)
-
-        Push the given refspec to the remote. Raises ``GitError`` on
+    def push(self, specs):
+        """Push the given refspec to the remote. Raises ``GitError`` on
         protocol error or unpack failure.
 
         :param [str] specs: push refspecs to use
-        :param Signature signature: signature to use when updating the tips
-        :param str message: message to use when updating the tips
-
         """
-        # Get the default callbacks first
-        defaultcallbacks = ffi.new('git_remote_callbacks *')
-        err = C.git_remote_init_callbacks(defaultcallbacks, 1)
-        check_error(err)
-
-        refspecs, refspecs_refs = strings_to_strarray(specs)
-        if signature:
-            sig_cptr = ffi.new('git_signature **')
-            ffi.buffer(sig_cptr)[:] = signature._pointer[:]
-            sig_ptr = sig_cptr[0]
-        else:
-            sig_ptr = ffi.NULL
+        push_opts = ffi.new('git_push_options *')
+        err = C.git_push_init_options(push_opts, C.GIT_PUSH_OPTIONS_VERSION)
 
         # Build custom callback structure
-        callbacks = ffi.new('git_remote_callbacks *')
-        callbacks.version = 1
-        callbacks.sideband_progress = self._sideband_progress_cb
-        callbacks.transfer_progress = self._transfer_progress_cb
-        callbacks.update_tips = self._update_tips_cb
-        callbacks.credentials = self._credentials_cb
-        callbacks.push_update_reference = self._push_update_reference_cb
+        push_opts.callbacks.sideband_progress = self._sideband_progress_cb
+        push_opts.callbacks.transfer_progress = self._transfer_progress_cb
+        push_opts.callbacks.update_tips = self._update_tips_cb
+        push_opts.callbacks.credentials = self._credentials_cb
+        push_opts.callbacks.push_update_reference = self._push_update_reference_cb
         # We need to make sure that this handle stays alive
         self._self_handle = ffi.new_handle(self)
-        callbacks.payload = self._self_handle
+        push_opts.callbacks.payload = self._self_handle
 
         try:
-            err = C.git_remote_set_callbacks(self._remote, callbacks)
-            check_error(err)
-        except:
-            self._self_handle = None
-            raise
-
-        try:
-            err = C.git_remote_push(self._remote, refspecs, ffi.NULL, sig_ptr, to_bytes(message))
-            check_error(err)
+            with StrArray(specs) as refspecs:
+                err = C.git_remote_push(self._remote, refspecs, ffi.NULL)
+                check_error(err)
         finally:
             self._self_handle = None
 
@@ -518,27 +431,30 @@ class RemoteCollection(object):
 
         return Remote(self._repo, cremote[0])
 
-    def create(self, name, url):
-        """create(name, url) -> Remote
+    def create(self, name, url, fetch=None):
+        """Create a new remote with the given name and url. Returns a <Remote>
+        object.
 
-        Create a new remote with the given name and url.
+        If 'fetch' is provided, this fetch refspec will be used instead of the default
         """
 
         cremote = ffi.new('git_remote **')
 
-        err = C.git_remote_create(cremote, self._repo._repo, to_bytes(name), to_bytes(url))
+        if fetch:
+            err = C.git_remote_create_with_fetchspec(cremote, self._repo._repo, to_bytes(name), to_bytes(url), to_bytes(fetch))
+        else:
+            err = C.git_remote_create(cremote, self._repo._repo, to_bytes(name), to_bytes(url))
+
         check_error(err)
 
         return Remote(self._repo, cremote[0])
 
     def rename(self, name, new_name):
-        """rename(name, new_name) -> [str]
-
-        Rename a remote in the configuration. The refspecs in strandard
+        """Rename a remote in the configuration. The refspecs in standard
         format will be renamed.
 
-        Returns a list of fetch refspecs which were not in the standard format
-        and thus could not be remapped
+        Returns a list of fetch refspecs (list of strings) which were not in
+        the standard format and thus could not be remapped.
         """
 
         if not new_name:
@@ -562,4 +478,30 @@ class RemoteCollection(object):
         All remote-tracking branches and configuration settings for the remote will be removed.
         """
         err = C.git_remote_delete(self._repo._repo, to_bytes(name))
+        check_error(err)
+
+    def set_url(self, name, url):
+        """ Set the URL for a remote
+        """
+        err = C.git_remote_set_url(self._repo._repo, to_bytes(name), to_bytes(url))
+        check_error(err)
+
+    def set_push_url(self, name, url):
+        """Set the push-URL for a remote
+        """
+        err = C.git_remote_set_pushurl(self._repo._repo, to_bytes(name), to_bytes(url))
+        check_error(err)
+
+    def add_fetch(self, name, refspec):
+        """Add a fetch refspec (str) to the remote
+        """
+
+        err = C.git_remote_add_fetch(self._repo._repo, to_bytes(name), to_bytes(refspec))
+        check_error(err)
+
+    def add_push(self, name, refspec):
+        """Add a push refspec (str) to the remote
+        """
+
+        err = C.git_remote_add_push(self._repo._repo, to_bytes(name), to_bytes(refspec))
         check_error(err)

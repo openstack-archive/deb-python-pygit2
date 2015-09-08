@@ -2,7 +2,7 @@
 pygit2 - libgit2 bindings in Python
 ######################################################################
 
-.. image:: https://secure.travis-ci.org/libgit2/pygit2.svg
+.. image:: https://travis-ci.org/libgit2/pygit2.svg?branch=master
    :target: http://travis-ci.org/libgit2/pygit2
 
 Pygit2 is a set of Python bindings to the libgit2 shared library, libgit2
@@ -24,6 +24,167 @@ How to install
 
 Changelog
 ==============
+
+0.23.0 (2015-08-14)
+-------------------------
+
+- Update to libgit2 v0.23
+  `#540 <https://github.com/libgit2/pygit2/pull/540>`_
+
+- Now ``Repository.merge_base(...)`` returns ``None`` if no merge base is found
+  `#550 <https://github.com/libgit2/pygit2/pull/550>`_
+
+- Documentation updates
+  `#547 <https://github.com/libgit2/pygit2/pull/547>`_
+
+API changes:
+
+- How to set identity (aka signature) in a reflog has changed::
+
+    # Before
+    signature = Signature('foo', 'bar')
+    ...
+    reference.set_target(target, signature=signature, message=message)
+    repo.set_head(target, signature=signature)
+    remote.fetch(signature=signature)
+    remote.push(signature=signature)
+
+    # Now
+    repo.set_ident('foo', 'bar')
+    ...
+    reference.set_target(target, message=message)
+    repo.set_head(target)
+    remote.push()
+
+    # The current identity can be get with
+    repo.ident
+
+- Some remote setters have been replaced by methods::
+
+    # Before                       # Now
+    Remote.url = url               Repository.remotes.set_url(name, url)
+    Remote.push_url = url          Repository.remotes.set_push_url(name, url)
+
+    Remote.add_fetch(refspec)      Repository.remotes.add_fetch(name, refspec)
+    Remote.add_push(refspec)       Repository.remotes.add_push(name, refspec)
+
+    Remote.fetch_refspecs = [...]  removed, use the config API instead
+    Remote.push_refspecs = [...]   removed, use the config API instead
+
+
+0.22.1 (2015-07-12)
+-------------------------
+
+Diff interface refactoring
+`#346 <https://github.com/libgit2/pygit2/pull/346>`_
+(in progress):
+
+- New ``iter(pygit2.Blame)``
+
+- New ``pygit2.DiffDelta``, ``pygit2.DiffFile`` and ``pygit.DiffLine``
+
+- API changes, translation table::
+
+    Hunk                => DiffHunk
+    Patch.old_file_path => Patch.delta.old_file.path
+    Patch.new_file_path => Patch.delta.new_file.path
+    Patch.old_id        => Patch.delta.old_file.id
+    Patch.new_id        => Patch.delta.new_file.id
+    Patch.status        => Patch.delta.status
+    Patch.similarity    => Patch.delta.similarity
+    Patch.is_binary     => Patch.delta.is_binary
+    Patch.additions     => Patch.line_stats[1]
+    Patch.deletions     => Patch.line_stats[2]
+
+- ``DiffHunk.lines`` is now a list of ``DiffLine`` objects, not tuples
+
+New features:
+
+- New ``Repository.expand_id(...)`` and ``Repository.ahead_behind(...)``
+  `#448 <https://github.com/libgit2/pygit2/pull/448>`_
+
+- New ``prefix`` parameter in ``Repository.write_archive``
+  `#481 <https://github.com/libgit2/pygit2/pull/481>`_
+
+- New ``Repository.merge_trees(...)``
+  `#489 <https://github.com/libgit2/pygit2/pull/489>`_
+
+- New ``Repository.cherrypick(...)``
+  `#436 <https://github.com/libgit2/pygit2/issues/436>`_
+  `#492 <https://github.com/libgit2/pygit2/pull/492>`_
+
+- New support for submodules
+  `#499 <https://github.com/libgit2/pygit2/pull/499>`_
+  `#514 <https://github.com/libgit2/pygit2/pull/514>`_
+
+- New ``Repository.merge_file_from_index(...)``
+  `#503 <https://github.com/libgit2/pygit2/pull/503>`_
+
+- Now ``Repository.diff`` supports diffing two blobs
+  `#508 <https://github.com/libgit2/pygit2/pull/508>`_
+
+- New optional ``fetch`` parameter in ``Remote.create``
+  `#526 <https://github.com/libgit2/pygit2/pull/526>`_
+
+- New ``pygit2.DiffStats``
+  `#406 <https://github.com/libgit2/pygit2/issues/406>`_
+  `#525 <https://github.com/libgit2/pygit2/pull/525>`_
+
+- New ``Repository.get_attr(...)``
+  `#528 <https://github.com/libgit2/pygit2/pull/528>`_
+
+- New ``level`` optional parameter in ``Index.remove``
+  `#533 <https://github.com/libgit2/pygit2/pull/533>`_
+
+- New ``repr(TreeEntry)``
+  `#543 <https://github.com/libgit2/pygit2/pull/543>`_
+
+Build and install improvements:
+
+- Make pygit work in a frozen environment
+  `#453 <https://github.com/libgit2/pygit2/pull/453>`_
+
+- Make pygit2 work with pyinstaller
+  `#510 <https://github.com/libgit2/pygit2/pull/510>`_
+
+Bugs fixed:
+
+- Fix memory issues
+  `#477 <https://github.com/libgit2/pygit2/issues/477>`_
+  `#487 <https://github.com/libgit2/pygit2/pull/487>`_
+  `#520 <https://github.com/libgit2/pygit2/pull/520>`_
+
+- Fix TreeEntry equality testing
+  `#458 <https://github.com/libgit2/pygit2/issues/458>`_
+  `#488 <https://github.com/libgit2/pygit2/pull/488>`_
+
+- ``Repository.write_archive`` fix handling of symlinks
+  `#480 <https://github.com/libgit2/pygit2/pull/480>`_
+
+- Fix type check in ``Diff[...]``
+  `#495 <https://github.com/libgit2/pygit2/issues/495>`_
+
+- Fix error when merging files with unicode content
+  `#505 <https://github.com/libgit2/pygit2/pull/505>`_
+
+Other:
+
+- Documentation improvements and fixes
+  `#448 <https://github.com/libgit2/pygit2/pull/448>`_
+  `#491 <https://github.com/libgit2/pygit2/pull/491>`_
+  `#497 <https://github.com/libgit2/pygit2/pull/497>`_
+  `#507 <https://github.com/libgit2/pygit2/pull/507>`_
+  `#517 <https://github.com/libgit2/pygit2/pull/517>`_
+  `#518 <https://github.com/libgit2/pygit2/pull/518>`_
+  `#519 <https://github.com/libgit2/pygit2/pull/519>`_
+  `#521 <https://github.com/libgit2/pygit2/pull/521>`_
+  `#523 <https://github.com/libgit2/pygit2/pull/523>`_
+  `#527 <https://github.com/libgit2/pygit2/pull/527>`_
+  `#536 <https://github.com/libgit2/pygit2/pull/536>`_
+
+- Expose the ``pygit2.GIT_REPOSITORY_INIT_*`` constants
+  `#483 <https://github.com/libgit2/pygit2/issues/483>`_
+
 
 0.22.0 (2015-01-16)
 -------------------
@@ -502,34 +663,39 @@ Other: `#331 <https://github.com/libgit2/pygit2/pull/331>`_
 Authors
 ==============
 
-83 developers have contributed at least 1 commit to pygit2::
+93 developers have contributed at least 1 commit to pygit2::
 
-  J. David Ibáñez            Sebastian Thiel            András Veres-Szentkirályi
-  Carlos Martín Nieto        Fraser Tweedale            Ash Berlin
-  Nico von Geyso             Han-Wen Nienhuys           Benjamin Kircher
-  W. Trevor King             Leonardo Rhodes            Benjamin Pollack
-  Dave Borowitz              Petr Viktorin              Bryan O'Sullivan
-  Daniel Rodríguez Troitiño  Ron Cohen                  Daniel Bruce
-  Richo Healey               Thomas Kluyver             David Fischer
-  Christian Boos             Alex Chamberlain           David Sanders
-  Julien Miotte              Alexander Bayandin         Devaev Maxim
-  Xu Tao                     Amit Bakshi                Eric Davis
-  Jose Plana                 Andrey Devyatkin           Erik Meusel
-  Matthew Gamble             Arno van Lumig             Erik van Zijst
-  Martin Lenders             Ben Davis                  Ferengee
-  Petr Hosek                 Eric Schrijver             Gustavo Di Pietro
-  Victor Garcia              Hervé Cauwelier            Hugh Cole-Baker
-  Xavier Delannoy            Huang Huang                Jasper Lievisse Adriaanse
-  Yonggang Luo               Ian P. McCullough          Josh Bleecher Snyder
-  Valentin Haenel            Jack O'Connor              Kyriakos Oikonomakos
-  Michael Jones              Jared Flatow               Mathieu Bridon
-  Bernardo Heynemann         Jiunn Haur Lim             Óscar San José
-  John Szakmeister           Jun Omae                   Ridge Kennedy
-  Matthew Duggan             Sarath Lakshman            Rui Abreu Ferreira
-  Brodie Rao                 Vicent Marti               Soasme
-  Vlad Temian                Zoran Zaric                chengyuhang
-  David Versmisse            Adam Spiers                earl
-  Rémi Duraffort             Andrew Chin
+  J. David Ibáñez           Carlos Martín Nieto       Nico von Geyso
+  W. Trevor King            Dave Borowitz             Daniel Rodríguez Troitiño
+  Richo Healey              Christian Boos            Julien Miotte
+  Richard Möhn              Xu Tao                    Jose Plana
+  Matthew Duggan            Matthew Gamble            Martin Lenders
+  Petr Hosek                Victor Garcia             Xavier Delannoy
+  Yonggang Luo              Patrick Steinhardt        Valentin Haenel
+  Michael Jones             Bernardo Heynemann        John Szakmeister
+  Vlad Temian               Brodie Rao                David Versmisse
+  Rémi Duraffort            Sebastian Thiel           Alok Singhal
+  Fraser Tweedale           Han-Wen Nienhuys          Leonardo Rhodes
+  Petr Viktorin             Ron Cohen                 Santiago Perez De Rosso
+  Thomas Kluyver            Alex Chamberlain          Alexander Bayandin
+  Amit Bakshi               Andrey Devyatkin          Arno van Lumig
+  Ben Davis                 Eric Schrijver            Greg Fitzgerald
+  Hervé Cauwelier           Huang Huang               Ian P. McCullough
+  Jack O'Connor             Jared Flatow              Jiunn Haur Lim
+  Jun Omae                  Kaarel Kitsemets          Kevin KIN-FOO
+  Sarath Lakshman           Vicent Marti              Zoran Zaric
+  Adam Spiers               Andrew Chin               András Veres-Szentkirályi
+  Ash Berlin                Benjamin Kircher          Benjamin Pollack
+  Bryan O'Sullivan          Colin Watson              Daniel Bruce
+  David Fischer             David Sanders             Devaev Maxim
+  Eric Davis                Erik Meusel               Erik van Zijst
+  Ferengee                  Gustavo Di Pietro         Holger Frey
+  Hugh Cole-Baker           Jasper Lievisse           Josh Bleecher Snyder
+  Justin Clift              Kyriakos Oikonomakos      Lukas Fleischer
+  Mathieu Bridon            Michael Sondergaard       Óscar San José
+  Peter Dave Hello          Philippe Ombredanne       Ridge Kennedy
+  Ross Nicoll               Rui Abreu Ferreira        Soasme
+  Vladimir Rutsky           chengyuhang               earl
 
 
 License

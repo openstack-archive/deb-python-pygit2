@@ -70,6 +70,21 @@ int_to_loose_object_type(int type_id)
     }
 }
 
+PyObject *
+wrap_repository(git_repository *c_repo)
+{
+    Repository *py_repo = PyObject_GC_New(Repository, &RepositoryType);
+
+    if (py_repo) {
+        py_repo->repo = c_repo;
+        py_repo->config = NULL;
+        py_repo->index = NULL;
+        py_repo->owned = 1;
+    }
+
+    return (PyObject *)py_repo;
+}
+
 int
 Repository_init(Repository *self, PyObject *args, PyObject *kwds)
 {
@@ -526,7 +541,8 @@ Repository_workdir__set__(Repository *self, PyObject *py_workdir)
 PyDoc_STRVAR(Repository_merge_base__doc__,
   "merge_base(oid, oid) -> Oid\n"
   "\n"
-  "Find as good common ancestors as possible for a merge.");
+  "Find as good common ancestors as possible for a merge.\n"
+  "Returns None if there is no merge base between the commits");
 
 PyObject *
 Repository_merge_base(Repository *self, PyObject *args)
@@ -550,6 +566,10 @@ Repository_merge_base(Repository *self, PyObject *args)
         return NULL;
 
     err = git_merge_base(&oid, self->repo, &oid1, &oid2);
+
+    if (err == GIT_ENOTFOUND)
+        Py_RETURN_NONE;
+
     if (err < 0)
         return Error_set(err);
 
@@ -622,12 +642,52 @@ Repository_merge(Repository *self, PyObject *py_oid)
     if (err < 0)
         return Error_set(err);
 
-    checkout_opts.checkout_strategy = GIT_CHECKOUT_SAFE_CREATE;
+    checkout_opts.checkout_strategy = GIT_CHECKOUT_SAFE | GIT_CHECKOUT_RECREATE_MISSING;
     err = git_merge(self->repo,
                     (const git_annotated_commit **)&commit, 1,
                     &merge_opts, &checkout_opts);
 
     git_annotated_commit_free(commit);
+    if (err < 0)
+        return Error_set(err);
+
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(Repository_cherrypick__doc__,
+  "cherrypick(id)\n"
+  "\n"
+  "Cherry-pick the given oid, producing changes in the index and working directory.\n"
+  "\n"
+  "Merges the given commit into HEAD as a cherrypick, writing the results into the\n"
+  "working directory. Any changes are staged for commit and any conflicts\n"
+  "are written to the index. Callers should inspect the repository's\n"
+  "index after this completes, resolve any conflicts and prepare a\n"
+  "commit.");
+
+PyObject *
+Repository_cherrypick(Repository *self, PyObject *py_oid)
+{
+    git_commit *commit;
+    git_oid oid;
+    int err;
+    size_t len;
+    git_cherrypick_options cherrypick_opts = GIT_CHERRYPICK_OPTIONS_INIT;
+
+    len = py_oid_to_git_oid(py_oid, &oid);
+    if (len == 0)
+        return NULL;
+
+    err = git_commit_lookup(&commit, self->repo, &oid);
+    if (err < 0)
+        return Error_set(err);
+
+    cherrypick_opts.checkout_opts.checkout_strategy = GIT_CHECKOUT_SAFE;
+    err = git_cherrypick(self->repo,
+                    commit,
+                    (const git_cherrypick_options *)&cherrypick_opts);
+
+    git_commit_free(commit);
     if (err < 0)
         return Error_set(err);
 
@@ -783,7 +843,7 @@ Repository_create_blob_fromdisk(Repository *self, PyObject *args)
 
 
 PyDoc_STRVAR(Repository_create_commit__doc__,
-  "create_commit(reference, author, committer, message, tree, parents[, encoding]) -> Oid\n"
+  "create_commit(reference_name, author, committer, message, tree, parents[, encoding]) -> Oid\n"
   "\n"
   "Create a new commit object, return its oid.");
 
@@ -934,7 +994,7 @@ Repository_create_branch(Repository *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "sO!|i", &c_name, &CommitType, &py_commit, &force))
         return NULL;
 
-    err = git_branch_create(&c_reference, self->repo, c_name, py_commit->commit, force, NULL, NULL);
+    err = git_branch_create(&c_reference, self->repo, c_name, py_commit->commit, force);
     if (err < 0)
         return Error_set(err);
 
@@ -1044,6 +1104,38 @@ error:
     return NULL;
 }
 
+PyDoc_STRVAR(Repository_listall_submodules__doc__,
+  "listall_submodules() -> [str, ...]\n"
+  "\n"
+  "Return a list with all submodule paths in the repository.\n");
+
+static int foreach_path_cb(git_submodule *submodule, const char *name, void *payload)
+{
+    PyObject *list = (PyObject *)payload;
+    PyObject *path = to_unicode(git_submodule_path(submodule), NULL, NULL);
+
+    return PyList_Append(list, path);
+}
+
+PyObject *
+Repository_listall_submodules(Repository *self, PyObject *args)
+{
+    int err;
+    PyObject *list;
+
+    list = PyList_New(0);
+    if (list == NULL)
+        return NULL;
+
+    err = git_submodule_foreach(self->repo, foreach_path_cb, list);
+    if (err != 0) {
+        Py_DECREF(list);
+        return Py_None;
+    }
+
+    return list;
+}
+
 
 PyDoc_STRVAR(Repository_lookup_reference__doc__,
   "lookup_reference(name) -> Reference\n"
@@ -1107,7 +1199,7 @@ Repository_create_reference_direct(Repository *self,  PyObject *args,
     if (err < 0)
         return NULL;
 
-    err = git_reference_create(&c_reference, self->repo, c_name, &oid, force, NULL, NULL);
+    err = git_reference_create(&c_reference, self->repo, c_name, &oid, force, NULL);
     if (err < 0)
         return Error_set(err);
 
@@ -1141,7 +1233,7 @@ Repository_create_reference_symbolic(Repository *self,  PyObject *args,
         return NULL;
 
     err = git_reference_symbolic_create(&c_reference, self->repo, c_name,
-                                        c_target, force, NULL, NULL);
+                                        c_target, force, NULL);
     if (err < 0)
         return Error_set(err);
 
@@ -1426,11 +1518,29 @@ Repository_reset(Repository *self, PyObject* args)
 
     err = git_object_lookup_prefix(&target, self->repo, &oid, len,
                                    GIT_OBJ_ANY);
-    err = err < 0 ? err : git_reset(self->repo, target, reset_type, NULL, NULL, NULL);
+    err = err < 0 ? err : git_reset(self->repo, target, reset_type, NULL);
     git_object_free(target);
     if (err < 0)
         return Error_set_oid(err, &oid, len);
     Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(Repository_expand_id__doc__,
+    "expand_id(hex) -> Oid\n"
+    "\n"
+    "Expand a string into a full Oid according to the objects in this repsitory.\n");
+
+PyObject *
+Repository_expand_id(Repository *self, PyObject *py_hex)
+{
+    git_oid oid;
+    int err;
+
+    err = py_oid_to_git_oid_expand(self->repo, py_hex, &oid);
+    if (err < 0)
+        return NULL;
+
+    return git_oid_to_python(&oid);
 }
 
 PyMethodDef Repository_methods[] = {
@@ -1444,11 +1554,13 @@ PyMethodDef Repository_methods[] = {
     METHOD(Repository, merge_base, METH_VARARGS),
     METHOD(Repository, merge_analysis, METH_O),
     METHOD(Repository, merge, METH_O),
+    METHOD(Repository, cherrypick, METH_O),
     METHOD(Repository, read, METH_O),
     METHOD(Repository, write, METH_VARARGS),
     METHOD(Repository, create_reference_direct, METH_VARARGS),
     METHOD(Repository, create_reference_symbolic, METH_VARARGS),
     METHOD(Repository, listall_references, METH_NOARGS),
+    METHOD(Repository, listall_submodules, METH_NOARGS),
     METHOD(Repository, lookup_reference, METH_O),
     METHOD(Repository, revparse_single, METH_O),
     METHOD(Repository, status, METH_NOARGS),
@@ -1461,6 +1573,7 @@ PyMethodDef Repository_methods[] = {
     METHOD(Repository, listall_branches, METH_VARARGS),
     METHOD(Repository, create_branch, METH_VARARGS),
     METHOD(Repository, reset, METH_VARARGS),
+    METHOD(Repository, expand_id, METH_O),
     METHOD(Repository, _from_c, METH_VARARGS),
     METHOD(Repository, _disown, METH_NOARGS),
     {NULL}
