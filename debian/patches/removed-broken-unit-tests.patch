@@ -7,7 +7,7 @@ Index: python-pygit2/test/test_repository.py
 ===================================================================
 --- python-pygit2.orig/test/test_repository.py
 +++ python-pygit2/test/test_repository.py
-@@ -425,96 +425,5 @@ class EmptyRepositoryTest(utils.EmptyRep
+@@ -481,96 +481,5 @@ class EmptyRepositoryTest(utils.EmptyRep
          self.assertTrue(self.repo.head_is_unborn)
          self.assertFalse(self.repo.head_is_detached)
  
@@ -104,9 +104,11 @@ Index: python-pygit2/test/test_repository.py
 -
  if __name__ == '__main__':
      unittest.main()
---- python-pygit2/test/test_credentials.py.orig	2015-06-08 14:55:39.908105308 +0200
-+++ python-pygit2/test/test_credentials.py	2015-06-08 14:55:53.232044015 +0200
-@@ -68,34 +68,5 @@
+Index: python-pygit2/test/test_credentials.py
+===================================================================
+--- python-pygit2.orig/test/test_credentials.py
++++ python-pygit2/test/test_credentials.py
+@@ -68,34 +68,5 @@ class CredentialCreateTest(utils.NoRepoT
          self.assertEqual((username, None, None, None), cred.credential_tuple)
  
  

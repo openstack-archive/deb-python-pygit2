@@ -1,6 +1,7 @@
 python-pygit2 (0.23.0-1) unstable; urgency=medium
 
   * New upstream release.
+  * Refreshed and rebased patches.
 
  -- Thomas Goirand <zigo@debian.org>  Tue, 08 Sep 2015 08:30:14 +0000
 
