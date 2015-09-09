@@ -1,6 +1,7 @@
 python-pygit2 (0.23.0-1) unstable; urgency=medium
 
-  * New upstream release (Closes: #797185).
+  * New upstream release (Closes: #797185):
+    - Fixes can't import in Python3 (Closes: #796657).
   * Refreshed and rebased patches.
 
  -- Thomas Goirand <zigo@debian.org>  Tue, 08 Sep 2015 08:30:14 +0000
