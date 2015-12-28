@@ -1,3 +1,9 @@
+python-pygit2 (0.23.0-2) unstable; urgency=medium
+
+  * Rebuild to fix permission error in Py3 (Closes: #807435).
+
+ -- Thomas Goirand <zigo@debian.org>  Mon, 28 Dec 2015 09:37:04 +0000
+
 python-pygit2 (0.23.0-1) unstable; urgency=medium
 
   * New upstream release (Closes: #797185):
