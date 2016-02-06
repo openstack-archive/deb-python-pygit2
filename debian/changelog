@@ -1,6 +1,7 @@
 python-pygit2 (0.23.3-1) unstable; urgency=medium
 
   * New upstream release.
+  * VCS URLs using HTTPS.
 
  -- Thomas Goirand <zigo@debian.org>  Sat, 06 Feb 2016 09:53:19 +0000
 
