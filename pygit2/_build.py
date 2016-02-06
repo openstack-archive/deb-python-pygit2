@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2010-2014 The pygit2 contributors
+# Copyright 2010-2015 The pygit2 contributors
 #
 # This file is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License, version 2,
@@ -26,23 +26,18 @@
 # Boston, MA 02110-1301, USA.
 
 """
-This is an special module, it provides stuff used by setup.py and by
-pygit2 at run-time.
+This is an special module, it provides stuff used by setup.py at build time.
+But also used by pygit2 at run time.
 """
 
 # Import from the Standard Library
-from binascii import crc32
-import codecs
 import os
 from os import getenv
-from os.path import abspath, dirname
-import sys
-
 
 #
 # The version number of pygit2
 #
-__version__ = '0.23.0'
+__version__ = '0.23.3'
 
 
 #
@@ -67,44 +62,3 @@ def get_libgit2_paths():
         os.path.join(libgit2_path, 'include'),
         getenv('LIBGIT2_LIB', os.path.join(libgit2_path, 'lib')),
     )
-
-
-#
-# Loads the cffi extension
-#
-def get_ffi():
-    import cffi
-
-    ffi = cffi.FFI()
-
-    # Load C definitions
-    if getattr(sys, 'frozen', False):
-        if hasattr(sys, '_MEIPASS'):
-            dir_path = sys._MEIPASS
-        else:
-            dir_path = dirname(abspath(sys.executable))
-    else:
-        dir_path = dirname(abspath(__file__))
-
-    decl_path = os.path.join(dir_path, 'decl.h')
-    with codecs.open(decl_path, 'r', 'utf-8') as header:
-        ffi.cdef(header.read())
-
-    # The modulename
-    # Simplified version of what cffi does: remove kwargs and vengine
-    preamble = "#include <git2.h>"
-    key = [sys.version[:3], cffi.__version__, preamble] + ffi._cdefsources
-    key = '\x00'.join(key)
-    if sys.version_info >= (3,):
-        key = key.encode('utf-8')
-    k1 = hex(crc32(key[0::2]) & 0xffffffff).lstrip('0x').rstrip('L')
-    k2 = hex(crc32(key[1::2]) & 0xffffffff).lstrip('0').rstrip('L')
-    modulename = 'pygit2_cffi_%s%s' % (k1, k2)
-
-    # Load extension module
-    libgit2_bin, libgit2_include, libgit2_lib = get_libgit2_paths()
-    C = ffi.verify(preamble, modulename=modulename, libraries=["git2"],
-                   include_dirs=[libgit2_include], library_dirs=[libgit2_lib])
-
-    # Ok
-    return ffi, C

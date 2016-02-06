@@ -1,4 +1,4 @@
-# -*- coding: UTF-8 -*-
+# -*- coding: utf-8 -*-
 #
 # Copyright 2010-2015 The pygit2 contributors
 #
@@ -25,41 +25,52 @@
 # the Free Software Foundation, 51 Franklin Street, Fifth Floor,
 # Boston, MA 02110-1301, USA.
 
-# Import from the future
-from __future__ import absolute_import
-from __future__ import unicode_literals, print_function
+"""
+This is an special module, it provides stuff used by by pygit2 at run-time.
+"""
 
 # Import from the Standard Library
-import binascii
-import unittest
-import tempfile
+import codecs
 import os
-from os.path import join, realpath
+from os.path import abspath, dirname
 import sys
 
+# Import from cffi
+from cffi import FFI
+
 # Import from pygit2
-from pygit2 import GIT_OBJ_ANY, GIT_OBJ_BLOB, GIT_OBJ_COMMIT
-from pygit2 import init_repository, clone_repository, discover_repository
-from pygit2 import Oid, Reference, hashfile
-import pygit2
-from . import utils
+from _build import get_libgit2_paths
 
-try:
-    import __pypy__
-except ImportError:
-    __pypy__ = None
 
-class RepositorySignatureTest(utils.RepoTestCase):
+# C_HEADER_SRC
+if getattr(sys, 'frozen', False):
+    dir_path = getattr(sys, '_MEIPASS', None)
+    if dir_path is None:
+        dir_path = dirname(abspath(sys.executable))
+else:
+    dir_path = dirname(abspath(__file__))
 
-    def test_no_attr(self):
-        self.assertIsNone(self.repo.get_attr('file', 'foo'))
+decl_path = os.path.join(dir_path, 'decl.h')
+with codecs.open(decl_path, 'r', 'utf-8') as header:
+    C_HEADER_SRC = header.read()
 
-        with open(join(self.repo.workdir, '.gitattributes'), 'w+') as f:
-            print('*.py  text\n', file=f)
-            print('*.jpg -text\n', file=f)
-            print('*.sh  eol=lf\n', file=f)
+# C_KEYWORDS
+libgit2_bin, libgit2_include, libgit2_lib = get_libgit2_paths()
+C_KEYWORDS = dict(libraries=['git2'],
+                  library_dirs=[libgit2_lib],
+                  include_dirs=[libgit2_include])
 
-        self.assertIsNone(self.repo.get_attr('file.py', 'foo'))
-        self.assertTrue(self.repo.get_attr('file.py', 'text'))
-        self.assertFalse(self.repo.get_attr('file.jpg', 'text'))
-        self.assertEqual("lf", self.repo.get_attr('file.sh', 'eol'))
+# preamble
+preamble = "#include <git2.h>"
+
+# ffi
+ffi = FFI()
+set_source = getattr(ffi, 'set_source', None)
+if set_source is not None:
+    set_source("pygit2._libgit2", preamble, **C_KEYWORDS)
+
+ffi.cdef(C_HEADER_SRC)
+
+
+if __name__ == '__main__':
+    ffi.compile()

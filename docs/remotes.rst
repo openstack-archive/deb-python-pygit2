@@ -21,6 +21,12 @@ The Remote type
 .. autoclass:: pygit2.Remote
    :members:
 
+The RemoteCallbacks type
+========================
+
+.. autoclass:: pygit2.RemoteCallbacks
+   :members:
+
 The TransferProgress type
 ===========================
 
@@ -41,8 +47,6 @@ Refspecs objects are not constructed directly, but returned by
 
 Credentials
 ================
-
-.. automethod:: pygit2.Remote.credentials
 
 There are two types of credentials: username/password and SSH key
 pairs. Both :py:class:`pygit2.UserPass` and :py:class:`pygit2.Keypair`

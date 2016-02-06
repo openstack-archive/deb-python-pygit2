@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2014 The pygit2 contributors
+ * Copyright 2010-2015 The pygit2 contributors
  *
  * This file is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2,
@@ -111,7 +111,11 @@ PyDoc_STRVAR(Tag__message__doc__, "Tag message (bytes).");
 PyObject *
 Tag__message__get__(Tag *self)
 {
-    return PyBytes_FromString(git_tag_message(self->tag));
+    const char *message;
+    message = git_tag_message(self->tag);
+    if (!message)
+        Py_RETURN_NONE;
+    return PyBytes_FromString(message);
 }
 
 PyMethodDef Tag_methods[] = {

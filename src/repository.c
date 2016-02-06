@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2014 The pygit2 contributors
+ * Copyright 2010-2015 The pygit2 contributors
  *
  * This file is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2,
@@ -842,6 +842,68 @@ Repository_create_blob_fromdisk(Repository *self, PyObject *args)
 }
 
 
+PyDoc_STRVAR(Repository_create_blob_fromiobase__doc__,
+    "create_blob_fromiobase(io.IOBase) -> Oid\n"
+    "\n"
+    "Create a new blob from an IOBase object.");
+
+
+int read_chunk(char *content, size_t max_length, void *payload)
+{
+    PyObject   *py_file;
+    PyObject   *py_bytes;
+    char       *bytes;
+    Py_ssize_t  size;
+
+    py_file  = (PyObject *)payload;
+    py_bytes = PyObject_CallMethod(py_file, "read", "i", max_length);
+    if (!py_bytes)
+        return -1;
+
+    size = 0;
+    if (py_bytes != Py_None) {
+        bytes = PyBytes_AsString(py_bytes);
+        size  = PyBytes_Size(py_bytes);
+        memcpy(content, bytes, size);
+    }
+
+    Py_DECREF(py_bytes);
+    return size;
+}
+
+PyObject *
+Repository_create_blob_fromiobase(Repository *self, PyObject *py_file)
+{
+    git_oid   oid;
+    PyObject *py_is_readable;
+    int       is_readable;
+    int       err;
+
+    py_is_readable = PyObject_CallMethod(py_file, "readable", NULL);
+    if (!py_is_readable) {
+        if (PyErr_ExceptionMatches(PyExc_AttributeError))
+          PyErr_SetObject(PyExc_TypeError, py_file);
+        return NULL;
+    }
+
+    is_readable = PyObject_IsTrue(py_is_readable);
+    Py_DECREF(py_is_readable);
+
+    if (!is_readable) {
+        Py_DECREF(py_file);
+        PyErr_SetString(PyExc_TypeError, "expected readable IO type");
+        return NULL;
+    }
+
+    err = git_blob_create_fromchunks(&oid, self->repo, NULL, &read_chunk,
+                                     py_file);
+    if (err < 0)
+        return Error_set(err);
+
+    return git_oid_to_python(&oid);
+}
+
+
 PyDoc_STRVAR(Repository_create_commit__doc__,
   "create_commit(reference_name, author, committer, message, tree, parents[, encoding]) -> Oid\n"
   "\n"
@@ -1547,6 +1609,7 @@ PyMethodDef Repository_methods[] = {
     METHOD(Repository, create_blob, METH_VARARGS),
     METHOD(Repository, create_blob_fromworkdir, METH_VARARGS),
     METHOD(Repository, create_blob_fromdisk, METH_VARARGS),
+    METHOD(Repository, create_blob_fromiobase, METH_O),
     METHOD(Repository, create_commit, METH_VARARGS),
     METHOD(Repository, create_tag, METH_VARARGS),
     METHOD(Repository, TreeBuilder, METH_VARARGS),

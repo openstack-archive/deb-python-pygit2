@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2014 The pygit2 contributors
+ * Copyright 2010-2015 The pygit2 contributors
  *
  * This file is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2,
@@ -323,6 +323,7 @@ moduleinit(PyObject* m)
     ADD_CONSTANT_INT(m, GIT_DIFF_IGNORE_CASE)
     ADD_CONSTANT_INT(m, GIT_DIFF_SHOW_UNTRACKED_CONTENT)
     ADD_CONSTANT_INT(m, GIT_DIFF_SKIP_BINARY_CHECK)
+    ADD_CONSTANT_INT(m, GIT_DIFF_SHOW_BINARY)
     ADD_CONSTANT_INT(m, GIT_DIFF_INCLUDE_TYPECHANGE)
     ADD_CONSTANT_INT(m, GIT_DIFF_INCLUDE_TYPECHANGE_TREES)
     ADD_CONSTANT_INT(m, GIT_DIFF_RECURSE_IGNORED_DIRS)
@@ -379,6 +380,11 @@ moduleinit(PyObject* m)
     ADD_CONSTANT_INT(m, GIT_MERGE_ANALYSIS_UP_TO_DATE)
     ADD_CONSTANT_INT(m, GIT_MERGE_ANALYSIS_FASTFORWARD)
     ADD_CONSTANT_INT(m, GIT_MERGE_ANALYSIS_UNBORN)
+
+    /* Describe */
+    ADD_CONSTANT_INT(m, GIT_DESCRIBE_DEFAULT);
+    ADD_CONSTANT_INT(m, GIT_DESCRIBE_TAGS);
+    ADD_CONSTANT_INT(m, GIT_DESCRIBE_ALL);
 
     /* Global initialization of libgit2 */
     git_libgit2_init();

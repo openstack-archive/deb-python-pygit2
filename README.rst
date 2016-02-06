@@ -6,8 +6,8 @@ pygit2 - libgit2 bindings in Python
    :target: http://travis-ci.org/libgit2/pygit2
 
 Pygit2 is a set of Python bindings to the libgit2 shared library, libgit2
-implements the core of Git.  Pygit2 works with Python 2.7, 3.2, 3.3, 3.4 and
-pypy.
+implements Git plumbing.  Pygit2 works with Python 2.7, 3.2, 3.3, 3.4 and
+PyPy 2.6
 
 Links:
 
@@ -24,6 +24,91 @@ How to install
 
 Changelog
 ==============
+
+0.23.3 (2016-01-01)
+-------------------------
+
+- New ``Repository.create_blob_fromiobase(...)``
+  `#490 <https://github.com/libgit2/pygit2/pull/490>`_
+  `#577 <https://github.com/libgit2/pygit2/pull/577>`_
+
+- New ``Repository.describe(...)``
+  `#585 <https://github.com/libgit2/pygit2/pull/585>`_
+
+- Fix ``Signature`` default encoding, UTF-8 now
+  `#581 <https://github.com/libgit2/pygit2/issues/581>`_
+
+- Fixing ``pip install pygit2``, should install cffi first
+
+- Unit tests, fix binary diff test
+  `#586 <https://github.com/libgit2/pygit2/pull/586>`_
+
+- Document that ``Diff.patch`` can be ``None``
+  `#587 <https://github.com/libgit2/pygit2/pull/587>`_
+
+
+0.23.2 (2015-10-11)
+-------------------------
+
+- Unify callbacks system for remotes and clone
+  `#568 <https://github.com/libgit2/pygit2/pull/568>`_
+
+- New ``TreeEntry._name``
+  `#570 <https://github.com/libgit2/pygit2/pull/570>`_
+
+- Fix segfault in ``Tag._message``
+  `#572 <https://github.com/libgit2/pygit2/pull/572>`_
+
+- Documentation improvements
+  `#569 <https://github.com/libgit2/pygit2/pull/569>`_
+  `#574 <https://github.com/libgit2/pygit2/pull/574>`_
+
+API changes to clone::
+
+  # Before
+  clone_repository(..., credentials, certificate)
+
+  # Now
+  callbacks = RemoteCallbacks(credentials, certificate)
+  clone_repository(..., callbacks)
+
+API changes to remote::
+
+  # Before
+  def transfer_progress(stats):
+      ...
+
+  remote.credentials = credentials
+  remote.transfer_progress = transfer_progress
+  remote.fetch()
+  remote.push(specs)
+
+  # Now
+  class MyCallbacks(RemoteCallbacks):
+      def transfer_progress(self, stats):
+          ...
+
+  callbacks = MyCallbacks(credentials)
+  remote.fetch(callbacks=callbacks)
+  remote.push(specs, callbacks=callbacks)
+
+
+0.23.1 (2015-09-26)
+-------------------------
+
+- Improve support for cffi 1.0+
+  `#529 <https://github.com/libgit2/pygit2/pull/529>`_
+  `#561 <https://github.com/libgit2/pygit2/pull/561>`_
+
+- Fix ``Remote.push``
+  `#557 <https://github.com/libgit2/pygit2/pull/557>`_
+
+- New ``TreeEntry.type``
+  `#560 <https://github.com/libgit2/pygit2/pull/560>`_
+
+- New ``pygit2.GIT_DIFF_SHOW_BINARY``
+  `#566 <https://github.com/libgit2/pygit2/pull/566>`_
+
 
 0.23.0 (2015-08-14)
 -------------------------
@@ -326,7 +411,7 @@ Other changes:
   `#380 <https://github.com/libgit2/pygit2/issues/380>`_
   `#407 <https://github.com/libgit2/pygit2/pull/407>`_
 
-- Add support for pypy3
+- Add support for PyPy3
   `#422 <https://github.com/libgit2/pygit2/pull/422>`_
 
 - Documentation improvements
@@ -490,7 +575,7 @@ Other:
 0.20.2 (2014-02-04)
 -------------------
 
-- Support pypy
+- Support PyPy
   `#209 <https://github.com/libgit2/pygit2/issues/209>`_
   `#327 <https://github.com/libgit2/pygit2/pull/327>`_
   `#333 <https://github.com/libgit2/pygit2/pull/333>`_
@@ -663,38 +748,41 @@ Other: `#331 <https://github.com/libgit2/pygit2/pull/331>`_
 Authors
 ==============
 
-93 developers have contributed at least 1 commit to pygit2::
+102 developers have contributed at least 1 commit to pygit2::
 
   J. David Ibáñez           Carlos Martín Nieto       Nico von Geyso
-  W. Trevor King            Dave Borowitz             Daniel Rodríguez Troitiño
+  W. Trevor King            Dave Borowitz             Daniel Rodríguez Troitiño
   Richo Healey              Christian Boos            Julien Miotte
   Richard Möhn              Xu Tao                    Jose Plana
   Matthew Duggan            Matthew Gamble            Martin Lenders
   Petr Hosek                Victor Garcia             Xavier Delannoy
   Yonggang Luo              Patrick Steinhardt        Valentin Haenel
   Michael Jones             Bernardo Heynemann        John Szakmeister
-  Vlad Temian               Brodie Rao                David Versmisse
-  Rémi Duraffort            Sebastian Thiel           Alok Singhal
-  Fraser Tweedale           Han-Wen Nienhuys          Leonardo Rhodes
-  Petr Viktorin             Ron Cohen                 Santiago Perez De Rosso
-  Thomas Kluyver            Alex Chamberlain          Alexander Bayandin
-  Amit Bakshi               Andrey Devyatkin          Arno van Lumig
-  Ben Davis                 Eric Schrijver            Greg Fitzgerald
-  Hervé Cauwelier           Huang Huang               Ian P. McCullough
-  Jack O'Connor             Jared Flatow              Jiunn Haur Lim
-  Jun Omae                  Kaarel Kitsemets          Kevin KIN-FOO
+  Vlad Temian               Brodie Rao                Nicolas Dandrimont
+  David Versmisse           Rémi Duraffort            Santiago Perez De Rosso
+  Sebastian Thiel           Alok Singhal              Fraser Tweedale
+  Han-Wen Nienhuys          Leonardo Rhodes           Petr Viktorin
+  Ron Cohen                 Thomas Kluyver            Alex Chamberlain
+  Alexander Bayandin        Amit Bakshi               Andrey Devyatkin
+  Arno van Lumig            Ben Davis                 Eric Schrijver
+  Greg Fitzgerald           Hervé Cauwelier           Huang Huang
+  Ian P. McCullough         Jack O'Connor             Jared Flatow
+  Jiunn Haur Lim            Jun Omae                  Kaarel Kitsemets
+  Kevin KIN-FOO             Masud Rahman              Michael Sondergaard
   Sarath Lakshman           Vicent Marti              Zoran Zaric
   Adam Spiers               Andrew Chin               András Veres-Szentkirályi
   Ash Berlin                Benjamin Kircher          Benjamin Pollack
-  Bryan O'Sullivan          Colin Watson              Daniel Bruce
-  David Fischer             David Sanders             Devaev Maxim
+  Bryan O'Sullivan          Chason Chaffin            Chris Rebert
+  Colin Watson              Daniel Bruce              David Fischer
+  David Sanders             David Six                 Devaev Maxim
   Eric Davis                Erik Meusel               Erik van Zijst
-  Ferengee                  Gustavo Di Pietro         Holger Frey
-  Hugh Cole-Baker           Jasper Lievisse           Josh Bleecher Snyder
-  Justin Clift              Kyriakos Oikonomakos      Lukas Fleischer
-  Mathieu Bridon            Michael Sondergaard       Óscar San José
-  Peter Dave Hello          Philippe Ombredanne       Ridge Kennedy
-  Ross Nicoll               Rui Abreu Ferreira        Soasme
+  Ferengee                  Guille -bisho-            Gustavo Di Pietro
+  Holger Frey               Hugh Cole-Baker           Jasper Lievisse Adriaanse
+  Josh Bleecher Snyder      Justin Clift              Kyriakos Oikonomakos
+  Lukas Fleischer           Mathieu Bridon            Nicolás Sanguinetti
+  Noah Fontes               Óscar San José            Peter Dave Hello
+  Philippe Ombredanne       Ridge Kennedy             Ross Nicoll
+  Rui Abreu Ferreira        Sheeo                     Soasme
   Vladimir Rutsky           chengyuhang               earl
 
 

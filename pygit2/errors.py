@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2010-2014 The pygit2 contributors
+# Copyright 2010-2015 The pygit2 contributors
 #
 # This file is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License, version 2,
@@ -62,3 +62,6 @@ def check_error(err, io=False):
 
     # Generic Git error
     raise GitError(message)
+
+# Indicate that we want libgit2 to pretend a function was not set
+Passthrough = Exception("The function asked for pass-through")

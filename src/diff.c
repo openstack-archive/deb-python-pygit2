@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2014 The pygit2 contributors
+ * Copyright 2010-2015 The pygit2 contributors
  *
  * This file is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2,
@@ -482,7 +482,8 @@ Diff_len(Diff *self)
     return (Py_ssize_t)git_diff_num_deltas(self->diff);
 }
 
-PyDoc_STRVAR(Diff_patch__doc__, "Patch diff string.");
+PyDoc_STRVAR(Diff_patch__doc__,
+    "Patch diff string. Can be None in some cases, such as empty commits.");
 
 PyObject *
 Diff_patch__get__(Diff *self)

@@ -1,6 +1,6 @@
 # -*- coding: UTF-8 -*-
 #
-# Copyright 2010-2014 The pygit2 contributors
+# Copyright 2010-2015 The pygit2 contributors
 #
 # This file is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License, version 2,
@@ -160,6 +160,12 @@ class EmptyRepoTestCase(AutoRepoTestCase):
 
     repo_spec = 'tar', 'emptyrepo'
 
+
 class SubmoduleRepoTestCase(AutoRepoTestCase):
 
     repo_spec = 'tar', 'submodulerepo'
+
+
+class BinaryFileRepoTestCase(AutoRepoTestCase):
+
+    repo_spec = 'tar', 'binaryfilerepo'

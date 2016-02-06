@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2014 The pygit2 contributors
+ * Copyright 2010-2015 The pygit2 contributors
  *
  * This file is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2,
@@ -64,6 +64,24 @@ PyObject *
 TreeEntry_name__get__(TreeEntry *self)
 {
     return to_path(git_tree_entry_name(self->entry));
+}
+
+
+PyDoc_STRVAR(TreeEntry__name__doc__, "Name (bytes).");
+
+PyObject *
+TreeEntry__name__get__(TreeEntry *self)
+{
+    return PyBytes_FromString(git_tree_entry_name(self->entry));
+}
+
+
+PyDoc_STRVAR(TreeEntry_type__doc__, "Type.");
+
+PyObject *
+TreeEntry_type__get__(TreeEntry *self)
+{
+    return to_path(git_object_type2string(git_tree_entry_type(self->entry)));
 }
 
 
@@ -168,9 +186,11 @@ TreeEntry_repr(TreeEntry *self)
 PyGetSetDef TreeEntry_getseters[] = {
     GETTER(TreeEntry, filemode),
     GETTER(TreeEntry, name),
+    GETTER(TreeEntry, _name),
     GETTER(TreeEntry, oid),
     GETTER(TreeEntry, id),
     GETTER(TreeEntry, hex),
+    GETTER(TreeEntry, type),
     {NULL}
 };
 

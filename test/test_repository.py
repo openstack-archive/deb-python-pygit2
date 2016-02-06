@@ -1,6 +1,6 @@
 # -*- coding: UTF-8 -*-
 #
-# Copyright 2010-2014 The pygit2 contributors
+# Copyright 2010-2015 The pygit2 contributors
 #
 # This file is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License, version 2,
@@ -514,10 +514,9 @@ class CloneRepositoryTest(utils.NoRepoTestCase):
         self.assertIsNotNone(repo.remotes["custom_remote"])
 
     def test_clone_with_credentials(self):
-        credentials = pygit2.UserPass("libgit2", "libgit2")
         repo = clone_repository(
             "https://bitbucket.org/libgit2/testgitrepository.git",
-            self._temp_dir, credentials=credentials)
+            self._temp_dir, callbacks=pygit2.RemoteCallbacks(credentials=pygit2.UserPass("libgit2", "libgit2")))
 
         self.assertFalse(repo.is_empty)
 

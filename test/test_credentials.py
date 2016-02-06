@@ -1,6 +1,6 @@
 # -*- coding: UTF-8 -*-
 #
-# Copyright 2010-2014 The pygit2 contributors
+# Copyright 2010-2015 The pygit2 contributors
 #
 # This file is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License, version 2,
@@ -70,32 +70,37 @@ class CredentialCreateTest(utils.NoRepoTestCase):
 
 class CredentialCallback(utils.RepoTestCase):
     def test_callback(self):
-        def credentials_cb(url, username, allowed):
-            self.assertTrue(allowed & GIT_CREDTYPE_USERPASS_PLAINTEXT)
-            raise Exception("I don't know the password")
+        class MyCallbacks(pygit2.RemoteCallbacks):
+            @staticmethod
+            def credentials(url, username, allowed):
+                self.assertTrue(allowed & GIT_CREDTYPE_USERPASS_PLAINTEXT)
+                raise Exception("I don't know the password")
 
-        remote = self.repo.create_remote("github", "https://github.com/github/github")
-        remote.credentials = credentials_cb
+        url = "https://github.com/github/github"
+        remote = self.repo.create_remote("github", url)
 
-        self.assertRaises(Exception, remote.fetch)
+        self.assertRaises(Exception, lambda: remote.fetch(callbacks=MyCallbacks()))
 
     def test_bad_cred_type(self):
-        def credentials_cb(url, username, allowed):
-            self.assertTrue(allowed & GIT_CREDTYPE_USERPASS_PLAINTEXT)
-            return Keypair("git", "foo.pub", "foo", "sekkrit")
+        class MyCallbacks(pygit2.RemoteCallbacks):
+            @staticmethod
+            def credentials(url, username, allowed):
+                self.assertTrue(allowed & GIT_CREDTYPE_USERPASS_PLAINTEXT)
+                return Keypair("git", "foo.pub", "foo", "sekkrit")
 
-        remote = self.repo.create_remote("github", "https://github.com/github/github")
-        remote.credentials = credentials_cb
-
-        self.assertRaises(TypeError, remote.fetch)
+        url = "https://github.com/github/github"
+        remote = self.repo.create_remote("github", url)
+        self.assertRaises(TypeError, lambda: remote.fetch(callbacks=MyCallbacks()))
 
 class CallableCredentialTest(utils.RepoTestCase):
 
     def test_user_pass(self):
-        remote = self.repo.create_remote("bb", "https://bitbucket.org/libgit2/testgitrepository.git")
-        remote.credentials = UserPass("libgit2", "libgit2")
+        credentials = UserPass("libgit2", "libgit2")
+        callbacks = pygit2.RemoteCallbacks(credentials=credentials)
 
-        remote.fetch()
+        url = "https://bitbucket.org/libgit2/testgitrepository.git"
+        remote = self.repo.create_remote("bb", url)
+        remote.fetch(callbacks=callbacks)
 
 if __name__ == '__main__':
     unittest.main()

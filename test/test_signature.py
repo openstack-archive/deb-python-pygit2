@@ -1,6 +1,6 @@
 # -*- coding: UTF-8 -*-
 #
-# Copyright 2010-2014 The pygit2 contributors
+# Copyright 2010-2015 The pygit2 contributors
 #
 # This file is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License, version 2,
@@ -38,9 +38,9 @@ class SignatureTest(NoRepoTestCase):
 
     def test_default(self):
         signature = Signature(
-            'Foo', 'foo@example.com', 1322174594, 60)
+            'Foo Ibáñez', 'foo@example.com', 1322174594, 60)
         encoding = signature._encoding
-        self.assertEqual(encoding, 'ascii')
+        self.assertEqual(encoding, 'utf-8')
         self.assertEqual(signature.name, signature.raw_name.decode(encoding))
         self.assertEqual(signature.name.encode(encoding), signature.raw_name)
         self.assertEqual(signature.email,
@@ -50,7 +50,7 @@ class SignatureTest(NoRepoTestCase):
 
     def test_ascii(self):
         self.assertRaises(UnicodeEncodeError,
-                          Signature, 'Foo Ibáñez', 'foo@example.com')
+            Signature, 'Foo Ibáñez', 'foo@example.com', encoding='ascii')
 
     def test_latin1(self):
         encoding = 'iso-8859-1'

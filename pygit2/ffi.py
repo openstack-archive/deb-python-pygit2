@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2010-2014 The pygit2 contributors
+# Copyright 2010-2015 The pygit2 contributors
 #
 # This file is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License, version 2,
@@ -29,7 +29,8 @@
 from __future__ import absolute_import
 
 # Import from pygit2
-from ._utils import get_ffi
-
-
-ffi, C = get_ffi()
+try:
+    from ._libgit2 import ffi, lib as C
+except ImportError:
+    from ._run import ffi, preamble, C_KEYWORDS
+    C = ffi.verify(preamble, **C_KEYWORDS)

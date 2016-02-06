@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2014 The pygit2 contributors
+ * Copyright 2010-2015 The pygit2 contributors
  *
  * This file is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2,
@@ -38,7 +38,7 @@ Signature_init(Signature *self, PyObject *args, PyObject *kwds)
 {
     char *keywords[] = {"name", "email", "time", "offset", "encoding", NULL};
     PyObject *py_name, *tname;
-    char *email, *encoding = "ascii";
+    char *email, *encoding = "utf-8";
     const char *name;
     long long time = -1;
     int offset = 0;
