@@ -1,6 +1,8 @@
 python-pygit2 (0.23.3-1) unstable; urgency=medium
 
-  * New upstream release.
+  * New upstream release:
+    - Removed network access doing tests (Closes: #809246).
+    - Rebuilt with newer CFFI (Closes: #807435).
   * VCS URLs using HTTPS.
   * Fixed debian/copyright ordering and years.
 
