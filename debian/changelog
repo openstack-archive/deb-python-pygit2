@@ -4,6 +4,7 @@ python-pygit2 (0.24.0-1) UNRELEASED; urgency=medium
   * Added python{3,}-six build dependency
   * Bumbed libgit2 dependency version
   * Added simple Debian tests
+  * Standards-Version is 3.9.8 now (no change)
 
  -- Ondřej Nový <novy@ondrej.org>  Mon, 18 Apr 2016 17:06:22 +0200
 
