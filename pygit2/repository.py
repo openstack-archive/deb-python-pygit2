@@ -37,6 +37,8 @@ if sys.version_info[0] < 3:
 else:
     from io import BytesIO as StringIO
 
+import six
+
 # Import from pygit2
 from _pygit2 import Repository as _Repository
 from _pygit2 import Oid, GIT_OID_HEXSZ, GIT_OID_MINPREFIXLEN
@@ -56,8 +58,10 @@ from .submodule import Submodule
 
 class Repository(_Repository):
 
-    def __init__(self, *args, **kwargs):
-        super(Repository, self).__init__(*args, **kwargs)
+    def __init__(self, path, *args, **kwargs):
+        if not isinstance(path, six.string_types):
+            path = path.decode('utf-8')
+        super(Repository, self).__init__(path, *args, **kwargs)
         self._common_init()
 
     @classmethod
@@ -716,8 +720,10 @@ class Repository(_Repository):
                 format_options.abbreviated_size = abbreviated_size
             if always_use_long_format is not None:
                 format_options.always_use_long_format = always_use_long_format
+            dirty_ptr = None
             if dirty_suffix:
-                format_options.dirty_suffix = ffi.new('char[]', to_bytes(dirty_suffix))
+                dirty_ptr = ffi.new('char[]', to_bytes(dirty_suffix))
+                format_options.dirty_suffix = dirty_ptr
 
             buf = ffi.new('git_buf *', (ffi.NULL, 0))
 

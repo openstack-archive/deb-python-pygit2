@@ -39,6 +39,8 @@ import os
 from os.path import join, realpath
 import sys
 
+import six
+
 # Import from pygit2
 from pygit2 import GIT_OBJ_ANY, GIT_OBJ_BLOB, GIT_OBJ_COMMIT
 from pygit2 import init_repository, clone_repository, discover_repository
@@ -480,6 +482,18 @@ class EmptyRepositoryTest(utils.EmptyRepoTestCase):
     def test_head(self):
         self.assertTrue(self.repo.head_is_unborn)
         self.assertFalse(self.repo.head_is_detached)
+
+
+class StringTypesRepositoryTest(utils.NoRepoTestCase):
+
+    def test_bytes_string(self):
+        repo_path = b'./test/data/testrepo.git/'
+        pygit2.Repository(repo_path)
+
+    def test_unicode_string(self):
+        # String is unicode because of unicode_literals
+        repo_path = './test/data/testrepo.git/'
+        pygit2.Repository(repo_path)
 
 
 class CloneRepositoryTest(utils.NoRepoTestCase):
