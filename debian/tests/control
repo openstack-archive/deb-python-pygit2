@@ -1,0 +1,5 @@
+Depends: python-pygit2
+Test-Command: python -c "import pygit2 ; print pygit2.__version__"
+
+Depends: python3-pygit2
+Test-Command: python3 -c "import pygit2 ; print(pygit2.__version__)"

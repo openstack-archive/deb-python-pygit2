@@ -3,6 +3,7 @@ python-pygit2 (0.24.0-1) UNRELEASED; urgency=medium
   * New upstream release (Closes: #820949)
   * Added python{3,}-six build dependency
   * Bumbed libgit2 dependency version
+  * Added simple Debian tests
 
  -- Ondřej Nový <novy@ondrej.org>  Mon, 18 Apr 2016 17:06:22 +0200
 
