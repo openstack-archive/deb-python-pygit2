@@ -1,5 +1,6 @@
 python-pygit2 (0.24.0-1) unstable; urgency=medium
 
+  * Added myself as uploader
   * New upstream release (Closes: #820949)
   * Added python{3,}-six build dependency
   * Bumbed libgit2 dependency version
