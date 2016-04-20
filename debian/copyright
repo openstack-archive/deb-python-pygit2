@@ -8,6 +8,7 @@ License: GPLv2-with-linking-exception
 
 Files: debian/*
 Copyright: (c) 2014-2016, Thomas Goirand <zigo@debian.org>
+           (c) 2016, Ondřej Nový <novy@ondrej.org>
 License: GPLv2-with-linking-exception
 
 License: GPLv2-with-linking-exception
