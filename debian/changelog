@@ -1,8 +1,8 @@
-python-pygit2 (0.24.0-2) UNRELEASED; urgency=medium
+python-pygit2 (0.24.0-2) unstable; urgency=medium
 
   * Run unit tests with UTC timezone, which workarounds upstream bug
 
- -- Ondřej Nový <novy@ondrej.org>  Wed, 20 Apr 2016 23:09:52 +0200
+ -- Ondřej Nový <novy@ondrej.org>  Thu, 21 Apr 2016 22:19:45 +0200
 
 python-pygit2 (0.24.0-1) unstable; urgency=medium
 
