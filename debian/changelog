@@ -1,3 +1,9 @@
+python-pygit2 (0.24.0-3) UNRELEASED; urgency=medium
+
+  * d/rules: Changed UPSTREAM_GIT protocol to https
+
+ -- Ondřej Nový <novy@ondrej.org>  Thu, 19 May 2016 21:29:48 +0200
+
 python-pygit2 (0.24.0-2) unstable; urgency=medium
 
   * Run unit tests with UTC timezone, which workarounds upstream bug
