@@ -1,9 +1,9 @@
-python-pygit2 (0.24.0-3) UNRELEASED; urgency=medium
+python-pygit2 (0.24.0-3) unstable; urgency=medium
 
   * d/rules: Changed UPSTREAM_GIT protocol to https
   * Added reproducible_build.patch to make build reproducible
 
- -- Ondřej Nový <novy@ondrej.org>  Thu, 19 May 2016 21:29:48 +0200
+ -- Ondřej Nový <novy@ondrej.org>  Tue, 07 Jun 2016 22:38:46 +0200
 
 python-pygit2 (0.24.0-2) unstable; urgency=medium
 
