@@ -1,3 +1,9 @@
+python-pygit2 (0.24.0-4) UNRELEASED; urgency=medium
+
+  * d/{control,copyright}: Use my @debian.org email address
+
+ -- Ondřej Nový <onovy@debian.org>  Mon, 20 Jun 2016 20:08:33 +0200
+
 python-pygit2 (0.24.0-3) unstable; urgency=medium
 
   * d/rules: Changed UPSTREAM_GIT protocol to https
