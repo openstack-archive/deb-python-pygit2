@@ -1,6 +1,7 @@
 python-pygit2 (0.24.0-4) UNRELEASED; urgency=medium
 
   * d/{control,copyright}: Use my @debian.org email address
+  * Changed Vcs-Browser URL to cgit
 
  -- Ondřej Nový <onovy@debian.org>  Mon, 20 Jun 2016 20:08:33 +0200
 
