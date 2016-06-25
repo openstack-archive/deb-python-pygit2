@@ -765,7 +765,7 @@ class Repository(_Repository):
             >>> import tarfile, pygit2
             >>>> with tarfile.open('foo.tar', 'w') as archive:
             >>>>     repo = pygit2.Repsitory('.')
-            >>>>     repo.write_archive(archive, repo.head.target)
+            >>>>     repo.write_archive(repo.head.target, archive)
         """
 
         # Try to get a tree form whatever we got
@@ -799,8 +799,8 @@ class Repository(_Repository):
             info.mtime = timestamp
             info.uname = info.gname = 'root' # just because git does this
             if entry.mode == GIT_FILEMODE_LINK:
-                info.type = archive.SYMTYPE
-                info.linkname = content
+                info.type = tarfile.SYMTYPE
+                info.linkname = content.decode("utf-8")
                 info.mode = 0o777 # symlinks get placeholder
                 info.size = 0
                 archive.addfile(info)
