@@ -1,5 +1,6 @@
-python-pygit2 (0.24.0-4) UNRELEASED; urgency=medium
+python-pygit2 (0.24.1-1) UNRELEASED; urgency=medium
 
+  * New upstream release
   * d/{control,copyright}: Use my @debian.org email address
   * Changed Vcs-Browser URL to cgit
 
