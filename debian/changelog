@@ -1,4 +1,4 @@
-python-pygit2 (0.24.1-1) UNRELEASED; urgency=medium
+python-pygit2 (0.24.1-1) unstable; urgency=medium
 
   * New upstream release
   * d/{control,copyright}: Use my @debian.org email address
@@ -6,7 +6,7 @@ python-pygit2 (0.24.1-1) UNRELEASED; urgency=medium
   * Removed reproducible_build.patch (Applied upstream)
   * Install README.rst
 
- -- Ondřej Nový <onovy@debian.org>  Mon, 20 Jun 2016 20:08:33 +0200
+ -- Ondřej Nový <onovy@debian.org>  Sat, 25 Jun 2016 23:15:34 +0200
 
 python-pygit2 (0.24.0-3) unstable; urgency=medium
 
