@@ -3,9 +3,9 @@ Author: Thomas Goirand <zigo@debian.org>
 Forwarded: no
 Last-Update: 2016-02-06
 
---- python-pygit2-0.23.3.orig/test/test_credentials.py
-+++ python-pygit2-0.23.3/test/test_credentials.py
-@@ -68,39 +68,5 @@ class CredentialCreateTest(utils.NoRepoT
+--- a/test/test_credentials.py
++++ b/test/test_credentials.py
+@@ -68,39 +68,5 @@
          self.assertEqual((username, None, None, None), cred.credential_tuple)
  
  
@@ -45,9 +45,9 @@ Last-Update: 2016-02-06
 -
  if __name__ == '__main__':
      unittest.main()
---- python-pygit2-0.23.3.orig/test/test_diff.py
-+++ python-pygit2-0.23.3/test/test_diff.py
-@@ -326,14 +326,5 @@ class DiffTest(utils.BareRepoTestCase):
+--- a/test/test_diff.py
++++ b/test/test_diff.py
+@@ -326,14 +326,5 @@
          self.assertEqual(STATS_EXPECTED, formatted)
  
  
@@ -62,9 +62,9 @@ Last-Update: 2016-02-06
 -
  if __name__ == '__main__':
      unittest.main()
---- python-pygit2-0.23.3.orig/test/test_remote.py
-+++ python-pygit2-0.23.3/test/test_remote.py
-@@ -49,44 +49,6 @@ REMOTE_REPO_BYTES = 2758
+--- a/test/test_remote.py
++++ b/test/test_remote.py
+@@ -49,44 +49,6 @@
  ORIGIN_REFSPEC = '+refs/heads/*:refs/remotes/origin/*'
  
  class RepositoryTest(utils.RepoTestCase):
@@ -109,7 +109,7 @@ Last-Update: 2016-02-06
      def test_remote_rename(self):
          remote = self.repo.remotes[0]
  
-@@ -99,22 +61,6 @@ class RepositoryTest(utils.RepoTestCase)
+@@ -99,22 +61,6 @@
          self.assertRaises(ValueError, self.repo.remotes.rename, None, None)
  
  
@@ -132,7 +132,7 @@ Last-Update: 2016-02-06
      def test_refspec(self):
          remote = self.repo.remotes["origin"]
  
-@@ -156,30 +102,6 @@ class RepositoryTest(utils.RepoTestCase)
+@@ -156,30 +102,6 @@
          remote = self.repo.remotes["origin"]
          self.assertEqual(['+refs/test/*:refs/test/remotes/*'], remote.push_refspecs)
  
@@ -163,9 +163,9 @@ Last-Update: 2016-02-06
      @unittest.skipIf(__pypy__ is not None, "skip refcounts checks in pypy")
      def test_remote_refcount(self):
          start = sys.getrefcount(self.repo)
---- python-pygit2-0.23.3.orig/test/test_repository.py
-+++ python-pygit2-0.23.3/test/test_repository.py
-@@ -513,13 +513,6 @@ class CloneRepositoryTest(utils.NoRepoTe
+--- a/test/test_repository.py
++++ b/test/test_repository.py
+@@ -527,13 +527,6 @@
          self.assertTrue('refs/remotes/custom_remote/master' in repo.listall_references())
          self.assertIsNotNone(repo.remotes["custom_remote"])
  
