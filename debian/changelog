@@ -4,6 +4,7 @@ python-pygit2 (0.24.1-1) UNRELEASED; urgency=medium
   * d/{control,copyright}: Use my @debian.org email address
   * Changed Vcs-Browser URL to cgit
   * Removed reproducible_build.patch (Applied upstream)
+  * Install README.rst
 
  -- Ondřej Nový <onovy@debian.org>  Mon, 20 Jun 2016 20:08:33 +0200
 

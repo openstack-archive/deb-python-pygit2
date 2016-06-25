@@ -43,6 +43,11 @@ override_dh_sphinxdoc:
 	sphinx-build -b html docs debian/python-pygit2-doc/usr/share/doc/python-pygit2-doc/html
 	dh_sphinxdoc -O--buildsystem=python_distutils
 
+override_dh_installdocs:
+	dh_installdocs
+
+	dh_installdocs -A README.rst
+
 # Commands not to run
 override_dh_installcatalogs:
 override_dh_installemacsen override_dh_installifupdown:
