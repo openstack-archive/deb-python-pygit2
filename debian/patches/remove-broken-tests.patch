@@ -64,7 +64,7 @@ Last-Update: 2016-02-06
      unittest.main()
 --- a/test/test_remote.py
 +++ b/test/test_remote.py
-@@ -49,44 +49,6 @@
+@@ -50,44 +50,6 @@
  ORIGIN_REFSPEC = '+refs/heads/*:refs/remotes/origin/*'
  
  class RepositoryTest(utils.RepoTestCase):
@@ -109,7 +109,7 @@ Last-Update: 2016-02-06
      def test_remote_rename(self):
          remote = self.repo.remotes[0]
  
-@@ -99,22 +61,6 @@
+@@ -100,22 +62,6 @@
          self.assertRaises(ValueError, self.repo.remotes.rename, None, None)
  
  
@@ -132,7 +132,7 @@ Last-Update: 2016-02-06
      def test_refspec(self):
          remote = self.repo.remotes["origin"]
  
-@@ -156,30 +102,6 @@
+@@ -157,30 +103,6 @@
          remote = self.repo.remotes["origin"]
          self.assertEqual(['+refs/test/*:refs/test/remotes/*'], remote.push_refspecs)
  
@@ -165,7 +165,7 @@ Last-Update: 2016-02-06
          start = sys.getrefcount(self.repo)
 --- a/test/test_repository.py
 +++ b/test/test_repository.py
-@@ -527,13 +527,6 @@
+@@ -538,13 +538,6 @@
          self.assertTrue('refs/remotes/custom_remote/master' in repo.listall_references())
          self.assertIsNotNone(repo.remotes["custom_remote"])
  

@@ -3,14 +3,17 @@ Author: Thomas Goirand <zigo@debian.org>
 Forwarded: no
 Last-Update: 2015-09-08
 
---- python-pygit2-0.23.0.orig/docs/development.rst
-+++ python-pygit2-0.23.0/docs/development.rst
-@@ -2,9 +2,6 @@
+--- a/docs/development.rst
++++ b/docs/development.rst
+@@ -2,12 +2,6 @@
  The development version
  **********************************************************************
  
 -.. image:: https://travis-ci.org/libgit2/pygit2.svg?branch=master
 -   :target: http://travis-ci.org/libgit2/pygit2
+-
+-.. image:: https://ci.appveyor.com/api/projects/status/edmwc0dctk5nacx0/branch/master?svg=true
+-   :target: https://ci.appveyor.com/project/jdavid/pygit2/branch/master
 -
  .. code-block:: sh
  
