@@ -1,3 +1,9 @@
+python-pygit2 (0.24.2-2) unstable; urgency=medium
+
+  * Drop unnecessary Depends on python-cffi (Closes: #849744)
+
+ -- Ondřej Nový <onovy@debian.org>  Mon, 02 Jan 2017 23:58:16 +0100
+
 python-pygit2 (0.24.2-1) unstable; urgency=medium
 
   * New upstream release
